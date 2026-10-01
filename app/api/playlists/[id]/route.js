@@ -45,21 +45,39 @@ export async function DELETE(req, { params }) {
     if (!id) {
       return NextResponse.json({ error: 'Missing playlist id' }, { status: 400 });
     }
+    if (!uid) {
+      return NextResponse.json({ error: 'Missing user id' }, { status: 400 });
+    }
+
+    let playlist = null;
+    try {
+      playlist = await prisma.playlist.findUnique({ where: { id } });
+    } catch (dbErr) {
+      console.error('[playlist DELETE] lookup failed:', dbErr.message);
+      return NextResponse.json({ error: 'Database unavailable, please try again' }, { status: 503 });
+    }
+
+    if (!playlist) {
+      return NextResponse.json({ error: 'Playlist not found' }, { status: 404 });
+    }
+
+    // Ownership check: only the creator can delete their playlist
+    if (playlist.userId !== uid) {
+      return NextResponse.json({ error: 'You can only delete your own playlists' }, { status: 403 });
+    }
 
     try {
-      if (prisma && prisma.playlistItem) {
-        await prisma.playlistItem.deleteMany({ where: { playlistId: id } }).catch(() => {});
-      }
-      if (prisma && prisma.playlist) {
-        await prisma.playlist.delete({ where: { id } }).catch(() => {});
-      }
+      // Items cascade via onDelete: Cascade; delete explicitly first for safety
+      await prisma.playlistItem.deleteMany({ where: { playlistId: id } });
+      await prisma.playlist.delete({ where: { id } });
     } catch (dbErr) {
-      console.warn('[playlist DELETE] prisma delete fallback:', dbErr.message);
+      console.error('[playlist DELETE] delete failed:', dbErr.message);
+      return NextResponse.json({ error: 'Failed to delete playlist, please try again' }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err) {
-    console.error('[playlist item API] DELETE error:', err);
+    console.error('[playlist DELETE] unexpected error:', err);
     return NextResponse.json({ error: 'Failed to delete playlist' }, { status: 500 });
   }
 }

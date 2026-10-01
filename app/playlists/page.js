@@ -106,26 +106,35 @@ export default function PlaylistsPage() {
       }
     }
 
-    // Immediately remove from UI and storage without blocking prompt
-    setPlaylists((prev) => prev.filter((p) => p.id !== id));
-    showToast('Playlist deleted');
-
-    try {
-      const raw = localStorage.getItem('oh_playlists');
-      if (raw) {
-        const list = JSON.parse(raw);
-        if (Array.isArray(list)) {
-          localStorage.setItem('oh_playlists', JSON.stringify(list.filter((p) => p.id !== id)));
-        }
-      }
-    } catch {}
-
+    // Delete on the server first so the UI never lies about the outcome
     const uid = getUserId();
+    let serverOk = false;
+    let gone = false;
     try {
-      await fetch(`/api/playlists/${id}?uid=${encodeURIComponent(uid || '')}`, {
+      const res = await fetch(`/api/playlists/${id}?uid=${encodeURIComponent(uid || '')}`, {
         method: 'DELETE',
       });
+      serverOk = res.ok;
+      gone = res.status === 404;
     } catch {}
+
+    if (serverOk || gone) {
+      // Remove from UI and legacy local storage only after the server confirms
+      setPlaylists((prev) => prev.filter((p) => p.id !== id));
+      showToast('Playlist deleted');
+
+      try {
+        const raw = localStorage.getItem('oh_playlists');
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list)) {
+            localStorage.setItem('oh_playlists', JSON.stringify(list.filter((p) => p.id !== id)));
+          }
+        }
+      } catch {}
+    } else {
+      showToast('Could not delete playlist — please try again');
+    }
   };
 
   return (

@@ -10,7 +10,17 @@ export default function VideoCard({ v, index = 0 }) {
   const [isHovered, setIsHovered] = useState(false);
   const [canHoverVideo, setCanHoverVideo] = useState(false);
   const [isDataSaver, setIsDataSaver] = useState(false);
-  const [isHidden, setIsHidden] = useState(false);
+  const [isHidden, setIsHidden] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const rawHidden = localStorage.getItem('oh_hidden_videos');
+      if (rawHidden) {
+        const arr = JSON.parse(rawHidden);
+        return Array.isArray(arr) && arr.includes(v.vkey);
+      }
+    } catch {}
+    return false;
+  });
   const videoRef = useRef(null);
 
   const [isFav, setIsFav] = useState(() => {
@@ -50,13 +60,6 @@ export default function VideoCard({ v, index = 0 }) {
     }
 
     try {
-      const rawHidden = localStorage.getItem('oh_hidden_videos');
-      if (rawHidden) {
-        const arr = JSON.parse(rawHidden);
-        if (Array.isArray(arr) && arr.includes(v.vkey)) {
-          setIsHidden(true);
-        }
-      }
       setIsDataSaver(localStorage.getItem('oh_datasaver') === '1');
     } catch {}
 
