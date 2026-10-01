@@ -5,6 +5,7 @@ import VideoCard, { VideoGridSkeleton } from '../../../components/VideoCard';
 import Pagination, { SectionHeader } from '../../../components/UI';
 import { IconFlame, IconEye, IconStar, IconSparkles, IconRefresh, IconInfinity } from '../../../components/Icons';
 import CategorySidebar, { MobileCategoryChips } from '../../../components/CategorySidebar';
+import BackToTop from '../../../components/BackToTop';
 
 const TYPES = {
   hottest: { title: 'Hottest videos', icon: IconFlame },
@@ -136,8 +137,11 @@ function ListPageContent() {
 
 export default function ListPage() {
   return (
-    <Suspense fallback={<div className="max-w-[1720px] mx-auto px-4 py-8"><VideoGridSkeleton n={20} /></div>}>
-      <ListPageContent />
-    </Suspense>
+    <>
+      <Suspense fallback={<div className="max-w-[1720px] mx-auto px-4 py-8"><VideoGridSkeleton n={20} /></div>}>
+        <ListPageContent />
+      </Suspense>
+      <BackToTop />
+    </>
   );
 }

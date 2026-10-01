@@ -1897,7 +1897,7 @@ export default function Player({
           <button
             type="button"
             onClick={() => setSleepTimerMins(null)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#ff9900]/25 border border-[#ff9900]/50 text-[#ff9900] text-[11px] font-bold shadow-lg backdrop-blur-md cursor-pointer hover:bg-[#ff9900]/40 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#ff9900]/25 border border-[#ff9900]/50 text-[#ff9900] text-[11px] font-bold shadow-lg backdrop-blur-md cursor-pointer hover:bg-[#ff9900]/40 transition-colors min-h-[44px]"
             title="Sleep timer active — click to turn off"
           >
             <IconMoon size={12} className="text-[#ff9900]" />
@@ -1910,7 +1910,7 @@ export default function Player({
             type="button"
             onClick={onToggleTheater}
             aria-label={theaterMode ? 'Exit Theater Mode' : 'Theater Mode'}
-            className={`p-1.5 rounded-lg backdrop-blur-md ring-1 shadow-lg transition-colors cursor-pointer ${
+            className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 rounded-lg backdrop-blur-md ring-1 shadow-lg transition-colors cursor-pointer ${
               theaterMode
                 ? 'bg-[#ff9900] text-black ring-[#ff9900]'
                 : 'bg-black/75 text-neutral-300 ring-white/10 hover:text-white'
@@ -1925,7 +1925,7 @@ export default function Player({
           type="button"
           onClick={() => setShowShortcuts((s) => !s)}
           aria-label="Keyboard Shortcuts"
-          className="w-7 h-7 rounded-lg bg-black/75 backdrop-blur-md ring-1 ring-white/10 text-neutral-400 hover:text-white text-xs font-bold flex items-center justify-center shadow-lg transition-colors cursor-pointer"
+          className="w-11 h-11 rounded-lg bg-black/75 backdrop-blur-md ring-1 ring-white/10 text-neutral-400 hover:text-white text-xs font-bold flex items-center justify-center shadow-lg transition-colors cursor-pointer"
           title="Keyboard Shortcuts (?)"
         >
           ?
@@ -2117,7 +2117,7 @@ export default function Player({
 
         {/* Controls Row */}
         <div className="control-bar flex items-center justify-between gap-2 text-white text-sm select-none pointer-events-auto">
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-3 shrink-0">
             {/* Play / Pause Button */}
             <button
               type="button"
@@ -2127,7 +2127,7 @@ export default function Player({
               }}
               onPointerDown={(e) => e.stopPropagation()}
               aria-label={isPlaying ? 'Pause' : 'Play'}
-              className="min-w-[36px] min-h-[36px] flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 hover:text-[#ff9900] transition-colors cursor-pointer touch-manipulation pointer-events-auto"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 hover:text-[#ff9900] transition-colors cursor-pointer touch-manipulation pointer-events-auto"
               title={isPlaying ? 'Pause (Space/K)' : 'Play (Space/K)'}
             >
               {isPlaying ? <IconPause size={22} /> : <IconPlay size={22} />}
@@ -2148,7 +2148,7 @@ export default function Player({
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
                 aria-label={isMuted ? 'Unmute' : 'Mute'}
-                className="min-w-[36px] min-h-[36px] flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 hover:text-[#ff9900] transition-colors cursor-pointer touch-manipulation pointer-events-auto"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 hover:text-[#ff9900] transition-colors cursor-pointer touch-manipulation pointer-events-auto"
                 title={isMuted ? 'Unmute (M)' : 'Mute (M)'}
               >
                 {isMuted || volume === 0 ? (
@@ -2178,7 +2178,7 @@ export default function Player({
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
+          <div className="flex items-center gap-1 sm:gap-2.5">
             {/* Playback Speed Menu */}
             <div className="relative speed-menu-container z-40 pointer-events-auto">
               <button
@@ -2190,7 +2190,7 @@ export default function Player({
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
                 aria-label="Playback speed"
-                className="min-h-[36px] min-w-[36px] flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-white hover:text-[#ff9900] text-[11px] sm:text-xs font-bold transition-colors cursor-pointer touch-manipulation pointer-events-auto"
+                className="min-h-[44px] min-w-[44px] flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-white hover:text-[#ff9900] text-[11px] sm:text-xs font-bold transition-colors cursor-pointer touch-manipulation pointer-events-auto"
                 title="Playback Speed"
               >
                 <IconSpeed size={14} />
@@ -2212,7 +2212,7 @@ export default function Player({
                       key={rate}
                       type="button"
                       onClick={() => updatePlaybackRate(rate)}
-                      className={`w-full text-left min-h-[38px] px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-between touch-manipulation cursor-pointer pointer-events-auto ${
+                      className={`w-full text-left min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-between touch-manipulation cursor-pointer pointer-events-auto ${
                         playbackRate === rate
                           ? 'bg-[#ff9900] text-black font-bold'
                           : 'text-neutral-300 hover:text-white hover:bg-[#222]'
@@ -2226,7 +2226,7 @@ export default function Player({
               )}
             </div>
 
-            {/* Quality Menu with >= 36px Touch Target */}
+            {/* Quality Menu with >= 44px Touch Target */}
             <div className="relative settings-menu-container z-40 pointer-events-auto">
               <button
                 type="button"
@@ -2237,11 +2237,11 @@ export default function Player({
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
                 aria-label="Video quality settings"
-                className="min-h-[36px] min-w-[36px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-white hover:text-[#ff9900] text-xs font-bold transition-colors cursor-pointer touch-manipulation pointer-events-auto"
+                className="min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-white hover:text-[#ff9900] text-xs font-bold transition-colors cursor-pointer touch-manipulation pointer-events-auto"
                 title="Quality Settings"
               >
                 <IconSettings size={15} />
-                <span className="capitalize">{activeQualityLabel}</span>
+                <span className="capitalize hidden sm:inline">{activeQualityLabel}</span>
               </button>
 
               {showSettingsMenu && (
@@ -2251,49 +2251,55 @@ export default function Player({
                   onPointerDown={(e) => e.stopPropagation()}
                   className="absolute right-0 bottom-12 z-50 bg-[#141414] border border-[#2a2a2a] rounded-2xl p-1.5 shadow-2xl min-w-[145px] flex flex-col gap-1 backdrop-blur-md pointer-events-auto"
                 >
-                  <div className="flex items-center justify-between px-3 py-2 border-b border-[#222]">
+                  <button
+                    type="button"
+                    onClick={toggleAutoplaySetting}
+                    aria-label="Toggle Autoplay Next"
+                    className="w-full flex items-center justify-between px-3 py-2 border-b border-[#222] cursor-pointer min-h-[44px]"
+                  >
                     <span className="text-xs font-semibold text-neutral-300">Autoplay</span>
-                    <button
-                      type="button"
-                      onClick={toggleAutoplaySetting}
-                      className={`w-8 h-4 rounded-full transition-colors relative cursor-pointer ${
+                    <span
+                      aria-hidden="true"
+                      className={`w-11 h-6 rounded-full transition-colors relative shrink-0 flex items-center ${
                         isAutoplay ? 'bg-[#ff9900]' : 'bg-[#333]'
                       }`}
-                      aria-label="Toggle Autoplay Next"
                     >
                       <span
-                        className={`block w-3 h-3 rounded-full bg-black transition-transform ${
-                          isAutoplay ? 'translate-x-4' : 'translate-x-0.5'
+                        className={`block w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                          isAutoplay ? 'translate-x-5' : 'translate-x-0.5'
                         }`}
                       />
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between px-3 py-2 border-b border-[#222]">
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={toggleAmbient}
+                    aria-label="Toggle Ambient Light"
+                    className="w-full flex items-center justify-between px-3 py-2 border-b border-[#222] cursor-pointer min-h-[44px]"
+                  >
                     <span className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
                       <IconSparkles size={12} className="text-[#ff9900]" /> Ambient Light
                     </span>
-                    <button
-                      type="button"
-                      onClick={toggleAmbient}
-                      className={`w-8 h-4 rounded-full transition-colors relative cursor-pointer ${
+                    <span
+                      aria-hidden="true"
+                      className={`w-11 h-6 rounded-full transition-colors relative shrink-0 flex items-center ${
                         ambientEnabled ? 'bg-[#ff9900]' : 'bg-[#333]'
                       }`}
-                      aria-label="Toggle Ambient Light"
                     >
                       <span
-                        className={`block w-3 h-3 rounded-full bg-black transition-transform ${
-                          ambientEnabled ? 'translate-x-4' : 'translate-x-0.5'
+                        className={`block w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                          ambientEnabled ? 'translate-x-5' : 'translate-x-0.5'
                         }`}
                       />
-                    </button>
-                  </div>
+                    </span>
+                  </button>
                   <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-neutral-500 border-b border-[#222]">
                     Quality
                   </div>
                   <button
                     type="button"
                     onClick={() => updateQuality('auto')}
-                    className={`w-full text-left min-h-[38px] px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-between touch-manipulation cursor-pointer pointer-events-auto ${
+                    className={`w-full text-left min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-between touch-manipulation cursor-pointer pointer-events-auto ${
                       quality === 'auto'
                         ? 'bg-[#ff9900] text-black font-bold'
                         : 'text-neutral-300 hover:text-white hover:bg-[#222]'
@@ -2307,7 +2313,7 @@ export default function Player({
                       key={q}
                       type="button"
                       onClick={() => updateQuality(q)}
-                      className={`w-full text-left min-h-[38px] px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-between touch-manipulation cursor-pointer pointer-events-auto ${
+                      className={`w-full text-left min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-between touch-manipulation cursor-pointer pointer-events-auto ${
                         quality === q
                           ? 'bg-[#ff9900] text-black font-bold'
                           : 'text-neutral-300 hover:text-white hover:bg-[#222]'
@@ -2340,7 +2346,7 @@ export default function Player({
                         key={t.label}
                         type="button"
                         onClick={() => setSleepTimerMins(t.val)}
-                        className={`py-1 text-center rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
+                        className={`py-1 min-h-[44px] flex items-center justify-center text-center rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
                           sleepTimerMins === t.val
                             ? 'bg-[#ff9900] text-black font-extrabold'
                             : 'text-neutral-400 hover:text-white hover:bg-[#252525]'
@@ -2363,7 +2369,7 @@ export default function Player({
                   onToggleTheater();
                 }}
                 aria-label={theaterMode ? 'Exit Theater Mode' : 'Theater Mode'}
-                className="min-w-[36px] min-h-[36px] items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 hover:text-[#ff9900] transition-colors cursor-pointer hidden sm:flex touch-manipulation"
+                className="min-w-[44px] min-h-[44px] items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 hover:text-[#ff9900] transition-colors cursor-pointer hidden sm:flex touch-manipulation"
                 title={theaterMode ? 'Exit Theater Mode (T)' : 'Theater Mode (T)'}
               >
                 <IconTheater size={18} className={theaterMode ? 'text-[#ff9900]' : ''} />
@@ -2378,7 +2384,7 @@ export default function Player({
                 togglePiP();
               }}
               aria-label="Picture in Picture"
-              className="min-w-[36px] min-h-[36px] items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 hover:text-[#ff9900] transition-colors cursor-pointer hidden sm:flex touch-manipulation"
+              className="min-w-[44px] min-h-[44px] items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 hover:text-[#ff9900] transition-colors cursor-pointer hidden sm:flex touch-manipulation"
               title="Picture in Picture"
             >
               <IconPip size={18} />
@@ -2393,7 +2399,7 @@ export default function Player({
                   handleCast();
                 }}
                 aria-label={isCasting ? 'Connected to Cast device' : 'Cast to TV / Device'}
-                className={`min-w-[36px] min-h-[36px] flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 transition-colors cursor-pointer touch-manipulation ${
+                className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 transition-colors cursor-pointer touch-manipulation ${
                   isCasting ? 'text-[#ff9900] bg-[#ff9900]/15 ring-1 ring-[#ff9900]/40' : 'text-neutral-200 hover:text-[#ff9900]'
                 }`}
                 title={isCasting ? 'Casting to TV (Connected)' : 'Cast Video to TV'}
@@ -2410,7 +2416,7 @@ export default function Player({
                 setShowShortcuts((s) => !s);
               }}
               aria-label="Keyboard Shortcuts (?)"
-              className="min-w-[36px] min-h-[36px] flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 hover:text-[#ff9900] transition-colors cursor-pointer touch-manipulation font-bold text-sm text-neutral-400"
+              className="min-w-[44px] min-h-[44px] items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 hover:text-[#ff9900] transition-colors cursor-pointer touch-manipulation font-bold text-sm text-neutral-400 hidden sm:flex"
               title="Keyboard Shortcuts (?)"
             >
               ?
@@ -2424,7 +2430,7 @@ export default function Player({
                 toggleFullscreen();
               }}
               aria-label={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-              className="min-w-[36px] min-h-[36px] flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 hover:text-[#ff9900] transition-colors cursor-pointer touch-manipulation"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 hover:text-[#ff9900] transition-colors cursor-pointer touch-manipulation"
               title="Fullscreen (F)"
             >
               {isFullscreen ? <IconFullscreenExit size={20} /> : <IconFullscreen size={20} />}
@@ -2475,7 +2481,7 @@ export default function Player({
                 type="button"
                 onClick={() => setShowShortcuts(false)}
                 aria-label="Close shortcuts"
-                className="text-neutral-400 hover:text-white text-sm cursor-pointer p-1"
+                className="text-neutral-400 hover:text-white text-sm cursor-pointer p-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
               >
                 <IconX size={16} />
               </button>
@@ -2488,6 +2494,10 @@ export default function Player({
               <div className="flex justify-between items-center py-1 border-b border-[#1c1c1c]">
                 <span>Seek -10s / +10s</span>
                 <kbd className="px-2 py-0.5 rounded bg-[#222] font-mono text-[#ff9900]">J / L</kbd>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-[#1c1c1c]">
+                <span>Double-tap left / right edge</span>
+                <kbd className="px-2 py-0.5 rounded bg-[#222] font-mono text-[#ff9900]">Seek −10s / +10s</kbd>
               </div>
               <div className="flex justify-between items-center py-1 border-b border-[#1c1c1c]">
                 <span>Seek -5s / +5s</span>

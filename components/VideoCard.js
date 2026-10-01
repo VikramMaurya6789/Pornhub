@@ -241,11 +241,11 @@ export default function VideoCard({ v, index = 0 }) {
           onClick={hideVideo}
           onPointerDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
-          className="absolute top-2 right-10 w-7 h-7 rounded-full bg-black/75 text-neutral-300 hover:text-red-400 hover:bg-black/90 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center shadow-md z-30 hover:scale-110 active:scale-90 cursor-pointer"
+          className="absolute top-2 right-14 w-11 h-11 rounded-full bg-black/75 text-neutral-300 hover:text-red-400 hover:bg-black/90 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-all flex items-center justify-center shadow-md z-30 hover:scale-110 active:scale-90 cursor-pointer"
           title="Not interested / Hide video"
           aria-label="Hide video"
         >
-          <IconEyeOff size={14} />
+          <IconEyeOff size={18} />
         </button>
 
         {/* Quick Save / Favorite Heart Button with Heart Pop Animation */}
@@ -254,15 +254,15 @@ export default function VideoCard({ v, index = 0 }) {
           onClick={toggleFav}
           onPointerDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
-          className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center transition-all shadow-md z-30 cursor-pointer ${
+          className={`absolute top-2 right-2 w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-md z-30 cursor-pointer ${
             isFav
               ? 'bg-[#ff9900] text-black opacity-100 scale-100 heart-pop'
-              : 'bg-black/75 text-neutral-300 hover:text-white opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-90'
+              : 'bg-black/75 text-neutral-300 hover:text-white opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 hover:scale-110 active:scale-90'
           }`}
           title={isFav ? 'Saved to Favorites' : 'Add to Favorites'}
           aria-label={isFav ? 'Remove from Favorites' : 'Add to Favorites'}
         >
-          <IconHeart size={14} className={isFav ? 'fill-black' : ''} />
+          <IconHeart size={18} className={isFav ? 'fill-black' : ''} />
         </button>
 
         {/* Live Scrubbing Bar on Hover */}

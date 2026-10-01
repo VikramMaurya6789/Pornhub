@@ -24,6 +24,7 @@ export const IconUser = (p) => <P {...p}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 
 export const IconMenu = (p) => <P {...p}><path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h16" /></P>;
 export const IconChevronL = (p) => <P {...p}><path d="m15 18-6-6 6-6" /></P>;
 export const IconChevronR = (p) => <P {...p}><path d="m9 18 6-6-6-6" /></P>;
+export const IconArrowUp = (p) => <P {...p}><path d="m5 12 7-7 7 7" /><path d="M12 19V5" /></P>;
 export const IconBadgeCheck = (p) => <P {...p}><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" /><path d="m9 12 2 2 4-4" /></P>;
 export const IconAlert = (p) => <P {...p}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></P>;
 export const IconSparkles = (p) => <P {...p}><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.2 2.2m8.4 8.4 2.2 2.2m0-12.8-2.2 2.2M7.8 16.2l-2.2 2.2" /></P>;

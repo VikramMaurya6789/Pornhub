@@ -179,7 +179,7 @@ export default function Header() {
     <header ref={headerRef} className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-b border-[#1f1f1f]">
       <div className="max-w-[1600px] mx-auto px-4 h-16 flex items-center gap-4">
         <button
-          className="lg:hidden text-neutral-300 hover:text-[#ff9900] transition-colors"
+          className="lg:hidden p-2.5 text-neutral-300 hover:text-[#ff9900] transition-colors"
           onClick={() => setOpen(!open)}
           aria-label="Menu"
         >
@@ -202,7 +202,7 @@ export default function Header() {
             <button
               type="submit"
               aria-label="Search"
-              className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#ff9900] hover:bg-[#e68a00] text-black flex items-center justify-center transition-colors"
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-[#ff9900] hover:bg-[#e68a00] text-black flex items-center justify-center transition-colors"
             >
               <IconSearch size={18} />
             </button>
@@ -282,7 +282,7 @@ export default function Header() {
           <button
             type="button"
             onClick={handlePanic}
-            className="px-2.5 py-1.5 rounded-full bg-red-950/60 border border-red-800/60 text-red-400 text-xs font-bold flex items-center gap-1"
+            className="px-2.5 py-2.5 rounded-full bg-red-950/60 border border-red-800/60 text-red-400 text-xs font-bold flex items-center gap-1"
             title="Panic button / Boss key (Esc)"
           >
             <IconShield size={13} />
@@ -290,7 +290,7 @@ export default function Header() {
           </button>
           <Link
             href="/categories"
-            className="md:hidden text-xs font-semibold bg-[#ff9900] text-black px-3.5 py-1.5 rounded-full hover:bg-[#e68a00] transition-colors"
+            className="md:hidden text-xs font-semibold bg-[#ff9900] text-black px-3.5 py-2.5 rounded-full hover:bg-[#e68a00] transition-colors"
           >
             Browse
           </Link>
@@ -311,7 +311,7 @@ export default function Header() {
           <button
             type="submit"
             aria-label="Search"
-            className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#ff9900] text-black flex items-center justify-center cursor-pointer"
+            className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-[#ff9900] text-black flex items-center justify-center cursor-pointer"
           >
             <IconSearch size={18} />
           </button>

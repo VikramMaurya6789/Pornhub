@@ -16,6 +16,7 @@ import {
   IconSearch,
 } from '../components/Icons';
 import CategorySidebar, { MobileCategoryChips } from '../components/CategorySidebar';
+import BackToTop from '../components/BackToTop';
 import { getUserId } from '../lib/uid';
 import { hasRejectedFunctional } from '../lib/consent';
 
@@ -465,6 +466,7 @@ export default function HomePage() {
             </section>
           </div>
         </main>
+        <BackToTop />
       </div>
     </div>
   );

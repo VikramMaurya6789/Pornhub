@@ -1014,7 +1014,7 @@ function WatchContent() {
                       </h3>
                       <button
                         onClick={() => setShowPlaylistModal(false)}
-                        className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-[#222] transition-colors"
+                        className="text-neutral-400 hover:text-white p-1 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-[#222] transition-colors"
                       >
                         <IconX size={18} />
                       </button>
@@ -1109,7 +1109,7 @@ function WatchContent() {
                       </h3>
                       <button
                         onClick={() => setShowQrModal(false)}
-                        className="p-1 rounded-lg text-neutral-400 hover:text-white hover:bg-[#222] transition-colors"
+                        className="p-1 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-neutral-400 hover:text-white hover:bg-[#222] transition-colors"
                       >
                         <IconX size={18} />
                       </button>
@@ -1183,7 +1183,7 @@ function WatchContent() {
                       </h3>
                       <button
                         onClick={() => setShowReportModal(false)}
-                        className="text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-[#222] transition-colors"
+                        className="text-neutral-400 hover:text-white p-1 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-[#222] transition-colors"
                       >
                         <IconX size={18} />
                       </button>
@@ -1494,7 +1494,7 @@ function WatchContent() {
                           <div className="flex items-center gap-4 mt-2 text-xs">
                             <button
                               onClick={() => likeComment(c.id)}
-                              className={`flex items-center gap-1.5 transition-colors font-medium ${isLiked ? 'text-[#ff9900]' : 'text-neutral-400 hover:text-white'}`}>
+                              className={`flex items-center gap-1.5 p-2 -m-2 rounded-lg transition-colors font-medium ${isLiked ? 'text-[#ff9900]' : 'text-neutral-400 hover:text-white'}`}>
                               <IconThumbUp size={14} className={isLiked ? 'fill-[#ff9900]' : ''} />
                               <span>{likeTotal}</span>
                             </button>

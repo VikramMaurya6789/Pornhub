@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { IconGrid } from '../../components/Icons';
 import { formatCount } from '../../lib/format';
+import BackToTop from '../../components/BackToTop';
 
 export default function CategoriesPage() {
   const [cats, setCats] = useState(null);
@@ -48,6 +49,7 @@ export default function CategoriesPage() {
           ))}
         </div>
       )}
+      <BackToTop />
     </div>
   );
 }

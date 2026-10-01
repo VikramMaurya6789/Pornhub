@@ -5,6 +5,7 @@ import VideoCard, { VideoGridSkeleton } from '../../../components/VideoCard';
 import Pagination from '../../../components/UI';
 import ListingFilterBar from '../../../components/ListingFilterBar';
 import { parseDurationSec, parseViewsNumber } from '../../../lib/format';
+import BackToTop from '../../../components/BackToTop';
 
 function CategorySlugInner() {
   const params = useParams();
@@ -126,8 +127,11 @@ function CategorySlugInner() {
 
 export default function CategorySlugPage() {
   return (
-    <Suspense fallback={<div className="max-w-[1600px] mx-auto px-4 py-6"><VideoGridSkeleton n={18} /></div>}>
-      <CategorySlugInner />
-    </Suspense>
+    <>
+      <Suspense fallback={<div className="max-w-[1600px] mx-auto px-4 py-6"><VideoGridSkeleton n={18} /></div>}>
+        <CategorySlugInner />
+      </Suspense>
+      <BackToTop />
+    </>
   );
 }
