@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URL")
+}
+
+model VideoCache {
+  vkey        String    @id
+  title       String
+  thumbnail   String?
+  duration    String?
+  durationSec Int?
+  views       String?
+  viewsNum    Int?
+  data        Json
+  cachedAt    DateTime  @default(now())
+  expiresAt   DateTime
+
+  @@index([expiresAt])
+}
+
+model FeedCache {
+  key       String   @id
+  data      Json
+  cachedAt  DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  vkey      String
+  title     String?
+  thumbnail String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, vkey])
+  @@index([userId, createdAt])
+}
+
+model WatchHistory {
+  id          String   @id @default(cuid())
+  userId      String
+  vkey        String
+  title       String?
+  thumbnail   String?
+  durationSec Int?
+  progressSec Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, vkey])
+  @@index([userId, updatedAt])
+}
+
+model VideoStat {
+  vkey      String   @id
+  views     Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model SearchLog {
+  query     String   @id
+  count     Int      @default(1)
+  updatedAt DateTime @updatedAt
+}
+
+model Playlist {
+  id        String         @id @default(cuid())
+  userId    String
+  name      String
+  isPublic  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  items     PlaylistItem[]
+
+  @@index([userId])
+}
+
+model PlaylistItem {
+  id         String   @id @default(cuid())
+  playlistId String
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  vkey       String
+  title      String?
+  thumbnail  String?
+  position   Int      @default(0)
+  addedAt    DateTime @default(now())
+
+  @@unique([playlistId, vkey])
+  @@index([playlistId])
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  vkey      String
+  reason    String
+  details   String?
+  createdAt DateTime @default(now())
+
+  @@index([vkey])
+}
+

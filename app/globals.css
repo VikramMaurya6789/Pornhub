@@ -1,0 +1,270 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #ff9900;
+  --color-brand-dark: #e68a00;
+  --color-ink: #0a0a0a;
+  --color-panel: #141414;
+  --color-panel2: #1c1c1c;
+  --color-line: #2a2a2a;
+}
+
+html, body {
+  background: #000;
+  color: #e8e8e8;
+  scroll-behavior: smooth;
+}
+
+/* Age gate: hide when html has .oh-age-verified */
+html.oh-age-verified #oh-age-gate {
+  display: none !important;
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Thin sleek dark scrollbars */
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: #0a0a0a; }
+*::-webkit-scrollbar-thumb { background: #282828; border-radius: 6px; border: 2px solid #0a0a0a; }
+*::-webkit-scrollbar-thumb:hover { background: #ff9900; }
+
+/* Micro-interaction: button click spring */
+button, a {
+  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+button:active {
+  transform: scale(0.96);
+}
+
+/* Card entrance with smooth spring */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.card-in {
+  animation: cardIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in {
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Defer rendering of offscreen sections for faster initial DOM paint */
+.content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 450px;
+}
+
+/* Ultra-smooth skeleton shimmer */
+@keyframes shimmer {
+  0% { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #131313 0%, #202020 40%, #2a2a2a 50%, #202020 60%, #131313 100%);
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+/* Pulsing accent glow */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 153, 0, 0.4); }
+  50% { box-shadow: 0 0 25px 5px rgba(255, 153, 0, 0.2); }
+}
+.glow-pulse {
+  animation: pulseGlow 2.5s infinite;
+}
+
+/* Heart Pop / Like Explosion */
+@keyframes heartPop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.4) rotate(-8deg); }
+  75% { transform: scale(0.92) rotate(4deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+.heart-pop {
+  animation: heartPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+/* Dropdown slide & scale entrance */
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.drop-in {
+  animation: dropIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top;
+}
+
+/* Toast entrance */
+@keyframes toastSlide {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.toast-slide {
+  animation: toastSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Shine Sheen Sweep on Hover */
+.shine-hover {
+  position: relative;
+  overflow: hidden;
+}
+.shine-hover::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 40%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    transparent 100%
+  );
+  transform: rotate(30deg);
+  pointer-events: none;
+  transition: transform 0.75s ease-in-out;
+  opacity: 0;
+}
+.shine-hover:hover::after {
+  transform: translateX(450%) rotate(30deg);
+  opacity: 1;
+}
+
+/* Video card hover elevation */
+.card-hover-elevate {
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.3s ease;
+}
+.card-hover-elevate:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 35px -8px rgba(255, 153, 0, 0.25);
+}
+
+/* Rotating loader spinner */
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spin-slow {
+  animation: spinSlow 3s linear infinite;
+}
+
+/* Video player */
+.oh-player video { width: 100%; height: 100%; background: #000; }
+
+/* Line clamp helpers */
+.clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Halix Starting Animation Keyframes */
+@keyframes logoEntrance {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+    filter: blur(10px);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+.animate-logo-in {
+  animation: logoEntrance 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes letterReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+}
+.animate-letter {
+  opacity: 0;
+  animation: letterReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes lineExpand {
+  0% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+.animate-line-expand {
+  transform-origin: center;
+  animation: lineExpand 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 0.4s;
+}
+
+@keyframes laserSweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+.animate-laser {
+  animation: laserSweep 1.2s linear infinite;
+}
+
+/* Cookie Consent slide-up entrance & slide-down exit */
+@keyframes cookieSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cookieSlideDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+.cookie-slide-up {
+  animation: cookieSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.cookie-slide-down {
+  animation: cookieSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cookie-slide-up,
+  .cookie-slide-down {
+    animation: none;
+    transition: opacity 0.2s ease;
+  }
+}
+
