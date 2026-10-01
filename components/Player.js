@@ -100,6 +100,86 @@ export default function Player({
     if (onToggleAutoplay) onToggleAutoplay(nextVal);
   };
 
+  // Ambient light (video glow) — default ON, persisted in localStorage
+  const [ambientEnabled, setAmbientEnabled] = useState(() => {
+    try {
+      const stored = localStorage.getItem('oh_ambient');
+      if (stored !== null) return stored === '1';
+    } catch {}
+    return true;
+  });
+  const [ambientColor, setAmbientColor] = useState('rgb(255, 153, 0)');
+  const ambientCanvasRef = useRef(null);
+  const ambientGlowRef = useRef(null);
+  const ambientTaintedRef = useRef(false);
+
+  const toggleAmbient = () => {
+    const nextVal = !ambientEnabled;
+    setAmbientEnabled(nextVal);
+    try {
+      localStorage.setItem('oh_ambient', nextVal ? '1' : '0');
+    } catch {}
+  };
+
+  // Ambient light sampler: draws the video to a tiny offscreen canvas every
+  // animation frame (up to 60fps) and paints the average color onto the glow
+  // div via ref (no re-render). At 64x36 the per-frame cost is negligible.
+  // Cross-origin streams taint the canvas — getImageData then throws, in which
+  // case sampling stops and the static brand-orange glow remains. Playback is
+  // never touched (no crossOrigin attribute is set on the video element).
+  useEffect(() => {
+    if (!ambientEnabled || ambientTaintedRef.current) return;
+    const video = videoRef.current;
+    const canvas = ambientCanvasRef.current;
+    if (!video || !canvas) return;
+    let ctx = null;
+    try {
+      ctx = canvas.getContext('2d', { willReadFrequently: true });
+    } catch {
+      return;
+    }
+    if (!ctx) return;
+    const reducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let raf = 0;
+    let stopped = false;
+    const sample = () => {
+      if (stopped) return;
+      raf = requestAnimationFrame(sample);
+      if (video.paused || video.ended || video.readyState < 2) return;
+      if (typeof document !== 'undefined' && document.hidden) return;
+      try {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let r = 0, g = 0, b = 0, n = 0;
+        for (let i = 0; i < d.length; i += 32) {
+          r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
+        }
+        if (n > 0 && ambientGlowRef.current) {
+          ambientGlowRef.current.style.backgroundColor =
+            `rgb(${Math.round(r / n)}, ${Math.round(g / n)}, ${Math.round(b / n)})`;
+        }
+      } catch (e) {
+        // Tainted canvas (cross-origin video) — stop sampling, keep static glow
+        ambientTaintedRef.current = true;
+        stopped = true;
+        cancelAnimationFrame(raf);
+        return;
+      }
+      if (reducedMotion) {
+        stopped = true;
+        cancelAnimationFrame(raf);
+      }
+    };
+    raf = requestAnimationFrame(sample);
+    return () => {
+      stopped = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [ambientEnabled]);
+
   const [bufferedEnd, setBufferedEnd] = useState(0);
 
   // Mobile double-tap feedback indicators
@@ -1778,7 +1858,28 @@ export default function Player({
   const bufferPercent = duration ? (bufferedEnd / duration) * 100 : 0;
 
   return (
-    <div
+    <div className="relative">
+      {/* Ambient light glow — sits behind the player, follows video colors */}
+      <div
+        ref={ambientGlowRef}
+        aria-hidden="true"
+        className={`pointer-events-none absolute -inset-3 sm:-inset-6 rounded-[2rem] blur-3xl saturate-[1.8] brightness-[1.15] ${
+          ambientEnabled
+            ? theaterMode || isFullscreen
+              ? 'opacity-20'
+              : 'opacity-40'
+            : 'opacity-0'
+        }`}
+        style={{
+          backgroundColor: ambientColor,
+          // Color tracks the video every frame: short transition keeps it
+          // responsive at 60fps; opacity keeps a slow fade for toggle/theater.
+          transition: 'background-color 120ms linear, opacity 1s ease',
+        }}
+      />
+      {/* Offscreen sampler canvas for ambient light (never visible) */}
+      <canvas ref={ambientCanvasRef} width={64} height={36} className="hidden" aria-hidden="true" />
+      <div
       ref={containerRef}
       tabIndex={0}
       onMouseMove={handleMouseMove}
@@ -2167,6 +2268,25 @@ export default function Player({
                       />
                     </button>
                   </div>
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-[#222]">
+                    <span className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                      <IconSparkles size={12} className="text-[#ff9900]" /> Ambient Light
+                    </span>
+                    <button
+                      type="button"
+                      onClick={toggleAmbient}
+                      className={`w-8 h-4 rounded-full transition-colors relative cursor-pointer ${
+                        ambientEnabled ? 'bg-[#ff9900]' : 'bg-[#333]'
+                      }`}
+                      aria-label="Toggle Ambient Light"
+                    >
+                      <span
+                        className={`block w-3 h-3 rounded-full bg-black transition-transform ${
+                          ambientEnabled ? 'translate-x-4' : 'translate-x-0.5'
+                        }`}
+                      />
+                    </button>
+                  </div>
                   <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-neutral-500 border-b border-[#222]">
                     Quality
                   </div>
@@ -2397,6 +2517,7 @@ export default function Player({
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }
