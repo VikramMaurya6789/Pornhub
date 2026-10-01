@@ -21,7 +21,25 @@ function WatchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const vkey = params?.vkey;
-  const initialTime = Math.max(0, parseFloat(searchParams?.get('t') || '0'));
+  // Resume: explicit ?t= param wins; otherwise restore saved position from history
+  // (only when meaningfully into the video but not nearly finished).
+  const { initialTime, resumedFrom } = useMemo(() => {
+    const tParam = Math.max(0, parseFloat(searchParams?.get('t') || '0'));
+    if (tParam > 0) return { initialTime: tParam, resumedFrom: 0 };
+    if (!vkey || hasRejectedFunctional()) return { initialTime: 0, resumedFrom: 0 };
+    try {
+      const raw = localStorage.getItem('oh_history');
+      const list = raw ? JSON.parse(raw) : [];
+      const item = list.find((h) => h && h.vkey === vkey);
+      const ct = Math.round(item?.currentTime || 0);
+      const total = Math.round(item?.totalDuration || item?.durationSec || 0);
+      if (ct > 10 && total > 30) {
+        const pct = ct / total;
+        if (pct >= 0.02 && pct <= 0.95) return { initialTime: ct, resumedFrom: ct };
+      }
+    } catch {}
+    return { initialTime: 0, resumedFrom: 0 };
+  }, [vkey]);
   const [v, setV] = useState(null);
   const [err, setErr] = useState(null);
   const [vote, setVote] = useState(null);
@@ -44,6 +62,9 @@ function WatchContent() {
   // Floating Miniplayer scroll state
   const [isScrolledPast, setIsScrolledPast] = useState(false);
   const playerAnchorRef = useRef(null);
+  // True floating mini-player: the real player detaches and floats bottom-right
+  // once scrolled past (same video element keeps playing — no remount).
+  const miniPlayerActive = isScrolledPast && !!v && !theaterMode;
 
   // Comments state
   const [comments, setComments] = useState([]);
@@ -73,6 +94,16 @@ function WatchContent() {
     setToast(msg);
     setTimeout(() => setToast(''), 2500);
   };
+
+  // Notify once per video when resuming from a saved position
+  useEffect(() => {
+    if (resumedFrom > 0) {
+      const m = Math.floor(resumedFrom / 60);
+      const s = String(Math.floor(resumedFrom % 60)).padStart(2, '0');
+      const t = setTimeout(() => showToast(`Resumed from ${m}:${s}`), 1200);
+      return () => clearTimeout(t);
+    }
+  }, [vkey]);
 
   const openPlaylistModal = async () => {
     if (hasRejectedFunctional()) {
@@ -736,25 +767,7 @@ function WatchContent() {
         </div>
       )}
 
-      {/* Floating Mini-Player Pill when scrolled down past video */}
-      {isScrolledPast && v && (
-        <div
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 left-6 z-40 bg-[#141414]/95 border border-[#ff9900]/40 rounded-2xl p-2.5 shadow-2xl flex items-center gap-3 cursor-pointer hover:border-[#ff9900] transition-all max-w-sm backdrop-blur fade-in group"
-          title="Click to scroll back to video player"
-        >
-          <div className="relative w-16 aspect-video rounded-lg overflow-hidden bg-black shrink-0">
-            <img src={v.thumbnail} alt="" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-              <span className="w-2 h-2 rounded-full bg-[#ff9900] animate-ping" />
-            </div>
-          </div>
-          <div className="min-w-0 pr-2">
-            <p className="text-xs font-bold text-white truncate group-hover:text-[#ff9900] transition-colors">{v.title}</p>
-            <p className="text-[11px] text-neutral-400 truncate">{v.author || 'Playing now'} • Return to video ↑</p>
-          </div>
-        </div>
-      )}
+      {/* Floating mini-player is rendered by the player container below when scrolled past */}
 
       {/* Standard 2-Column Responsive Grid with Persistent Player */}
       <div className="grid lg:grid-cols-[1fr_380px] gap-8">
@@ -767,6 +780,11 @@ function WatchContent() {
               : 'lg:col-start-1 lg:row-start-1 lg:col-span-1'
           }`}
         >
+          {/* Placeholder keeps the layout stable while the real player floats */}
+          {miniPlayerActive && (
+            <div className="aspect-video rounded-xl bg-black/40 ring-1 ring-white/10" aria-hidden="true" />
+          )}
+          <div className={miniPlayerActive ? 'fixed bottom-4 right-4 z-40 w-[min(340px,80vw)] fade-in' : 'contents'}>
           {!v ? (
             <div className="aspect-video rounded-xl skeleton" />
           ) : (
@@ -784,6 +802,8 @@ function WatchContent() {
               autoplayNext={autoplayNext}
               onToggleAutoplay={(val) => setAutoplayNext(val)}
               initialTime={initialTime}
+              compact={miniPlayerActive}
+              onExpand={() => playerAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             />
           )}
 
@@ -810,6 +830,7 @@ function WatchContent() {
               </div>
             </div>
           )}
+          </div>
         </div>
 
         {/* Main Details Column (Title, Actions, Description, Comments) */}
@@ -1497,11 +1518,6 @@ function WatchContent() {
                               className={`flex items-center gap-1.5 p-2 -m-2 rounded-lg transition-colors font-medium ${isLiked ? 'text-[#ff9900]' : 'text-neutral-400 hover:text-white'}`}>
                               <IconThumbUp size={14} className={isLiked ? 'fill-[#ff9900]' : ''} />
                               <span>{likeTotal}</span>
-                            </button>
-                            <button
-                              onClick={() => showToast('Replies feature coming soon')}
-                              className="text-neutral-500 hover:text-neutral-300 font-medium transition-colors">
-                              Reply
                             </button>
                           </div>
                         </div>

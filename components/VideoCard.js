@@ -5,6 +5,28 @@ import { IconEye, IconHeart, IconEyeOff } from './Icons';
 import { formatCount, parseDurationSec } from '../lib/format';
 import { hasRejectedFunctional, openCookiePreferences } from '../lib/consent';
 
+// Cached map of vkey -> watch progress % (from local history). Module-level
+// so dozens of cards share a single localStorage read.
+let progressCache = null;
+function getProgressMap() {
+  if (progressCache) return progressCache;
+  progressCache = {};
+  try {
+    if (typeof window === 'undefined' || hasRejectedFunctional()) return progressCache;
+    const raw = localStorage.getItem('oh_history');
+    const list = raw ? JSON.parse(raw) : [];
+    for (const h of list) {
+      if (h && h.vkey && typeof h.currentTime === 'number') {
+        const total = h.totalDuration || h.durationSec || 0;
+        if (total > 0 && h.currentTime > 0) {
+          progressCache[h.vkey] = Math.min(99, Math.round((h.currentTime / total) * 100));
+        }
+      }
+    }
+  } catch {}
+  return progressCache;
+}
+
 export default function VideoCard({ v, index = 0 }) {
   const [scrubPos, setScrubPos] = useState(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -234,6 +256,16 @@ export default function VideoCard({ v, index = 0 }) {
         )}
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+        {/* Watch progress bar (from Continue Watching history) */}
+        {(() => {
+          const p = v && v.vkey ? getProgressMap()[v.vkey] : 0;
+          return p > 1 && p < 99 ? (
+            <div className="absolute inset-x-0 bottom-0 h-1 bg-black/70 z-20 pointer-events-none">
+              <div className="h-full bg-[#ff9900]" style={{ width: `${p}%` }} />
+            </div>
+          ) : null;
+        })()}
 
         {/* Not Interested / Hide Video Button */}
         <button

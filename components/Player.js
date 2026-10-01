@@ -5,7 +5,7 @@ import {
   IconPlay, IconPause, IconVolume, IconVolumeLow, IconVolumeMute,
   IconFullscreen, IconFullscreenExit, IconPip, IconTheater, IconCast,
   IconSpeed, IconSettings, IconAlert, IconSparkles,
-  IconSpinner, IconX, IconCheck, IconMoon
+  IconSpinner, IconX, IconCheck, IconMoon, IconSun, IconArrowUp
 } from './Icons';
 
 function parseDurationToSec(d) {
@@ -46,6 +46,8 @@ export default function Player({
   autoplayNext = true,
   onToggleAutoplay,
   initialTime = 0,
+  compact = false, // floating mini-player mode: minimal controls
+  onExpand, // called when the expand button is tapped in compact mode
 }) {
   const [quality, setQuality] = useState('auto');
   const [qualityIndex, setQualityIndex] = useState(0);
@@ -184,6 +186,11 @@ export default function Player({
 
   // Mobile double-tap feedback indicators
   const [seekFeedback, setSeekFeedback] = useState(null); // { side: 'left' | 'right', text: '-10s' | '+10s' }
+  const [swipeUI, setSwipeUI] = useState(null); // { type: 'volume' | 'brightness', pct: 0-100 }
+  const swipeRef = useRef(null); // { x0, y0, side, active, startVol, startBright }
+  const swipeEndRef = useRef(0); // timestamp of last swipe end (suppresses the follow-up tap)
+  const swipeHideTimeoutRef = useRef(null);
+  const brightnessRef = useRef(1);
   const [hoverTime, setHoverTime] = useState(null);
   const [hoverPosition, setHoverPosition] = useState(0);
 
@@ -727,6 +734,17 @@ export default function Player({
       }
       const savedQuality = localStorage.getItem('oh_quality');
       if (savedQuality) setQuality(savedQuality);
+
+      const savedBright = localStorage.getItem('oh_brightness');
+      if (savedBright !== null) {
+        const parsedBright = parseFloat(savedBright);
+        if (!isNaN(parsedBright) && parsedBright >= 0.4 && parsedBright <= 1.4) {
+          brightnessRef.current = parsedBright;
+          if (videoRef.current && parsedBright !== 1) {
+            videoRef.current.style.filter = `brightness(${parsedBright.toFixed(2)})`;
+          }
+        }
+      }
     } catch {}
   }, []);
 
@@ -1287,6 +1305,19 @@ export default function Player({
     } catch {}
   };
 
+  // Screen brightness for swipe gesture (CSS filter on the video element only;
+  // does not affect the ambient-light sampler which reads raw frames).
+  const applyBrightness = (val) => {
+    const clamped = Math.max(0.4, Math.min(1.4, val));
+    brightnessRef.current = clamped;
+    try {
+      if (videoRef.current) {
+        videoRef.current.style.filter = clamped === 1 ? '' : `brightness(${clamped.toFixed(2)})`;
+      }
+      localStorage.setItem('oh_brightness', String(clamped));
+    } catch {}
+  };
+
   const toggleMute = () => {
     const nextMuted = !isMuted;
     setIsMuted(nextMuted);
@@ -1614,6 +1645,11 @@ export default function Player({
 
   // Mobile Touch Gestures: Single tap toggles controls, double tap seeks -10s / +10s
   const handleTouchEnd = (e) => {
+    // A vertical swipe gesture just ended — don't treat it as a tap.
+    if (Date.now() - swipeEndRef.current < 500) {
+      swipeEndRef.current = 0;
+      return;
+    }
     // Ignore touches on interactive buttons, inputs, menus, and scrubber
     if (e.target && e.target.closest && e.target.closest('button, input, a, [role="button"], .control-bar, .scrubber-bar, [data-interactive="true"]')) {
       return;
@@ -1667,6 +1703,89 @@ export default function Player({
     e.preventDefault();
     toggleFullscreen();
   };
+
+  // Mobile vertical-swipe gestures (MX Player style): left half = brightness,
+  // right half = volume. Native non-passive touchmove so the page doesn't
+  // scroll mid-gesture. Taps/double-taps keep working via the React handlers.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const INTERACTIVE_SEL = 'button, input, a, [role="button"], .control-bar, .scrubber-bar, [data-interactive="true"]';
+    const isInteractive = (t) => !!(t && t.closest && t.closest(INTERACTIVE_SEL));
+
+    const onTS = (e) => {
+      const t = e.changedTouches[0];
+      if (!t || isInteractive(e.target)) {
+        swipeRef.current = null;
+        return;
+      }
+      const rect = el.getBoundingClientRect();
+      swipeRef.current = {
+        x0: t.clientX,
+        y0: t.clientY,
+        side: (t.clientX - rect.left) < rect.width / 2 ? 'left' : 'right',
+        active: false,
+        startVol: videoRef.current ? videoRef.current.volume : 1,
+        startBright: brightnessRef.current,
+      };
+    };
+
+    const onTM = (e) => {
+      const s = swipeRef.current;
+      if (!s) return;
+      const t = e.changedTouches[0];
+      if (!t) return;
+      const dx = t.clientX - s.x0;
+      const dy = t.clientY - s.y0;
+      if (!s.active) {
+        // Lock in only on a clear vertical swipe; anything else is not ours.
+        if (Math.abs(dy) > 24 && Math.abs(dy) > Math.abs(dx) * 1.4) {
+          s.active = true;
+        } else if (Math.abs(dx) > 24 || Math.abs(dy) > 24) {
+          swipeRef.current = null;
+          return;
+        } else {
+          return;
+        }
+      }
+      e.preventDefault();
+      const delta = (s.y0 - t.clientY) / 160; // full swipe height ≈ 100%
+      if (s.side === 'right') {
+        const nv = Math.max(0, Math.min(1, s.startVol + delta));
+        updateVolume(nv);
+        setSwipeUI({ type: 'volume', pct: Math.round(nv * 100) });
+      } else {
+        const nb = Math.max(0.4, Math.min(1.4, s.startBright + delta));
+        applyBrightness(nb);
+        setSwipeUI({ type: 'brightness', pct: Math.round(((nb - 0.4) / 1.0) * 100) });
+      }
+      if (swipeHideTimeoutRef.current) clearTimeout(swipeHideTimeoutRef.current);
+    };
+
+    const onTE = () => {
+      const s = swipeRef.current;
+      if (s && s.active) {
+        // Suppress the tap that React's onTouchEnd would otherwise fire.
+        swipeEndRef.current = Date.now();
+        if (swipeHideTimeoutRef.current) clearTimeout(swipeHideTimeoutRef.current);
+        swipeHideTimeoutRef.current = setTimeout(() => setSwipeUI(null), 900);
+      }
+      swipeRef.current = null;
+    };
+
+    el.addEventListener('touchstart', onTS, { passive: true });
+    el.addEventListener('touchmove', onTM, { passive: false });
+    el.addEventListener('touchend', onTE, { passive: true });
+    el.addEventListener('touchcancel', onTE, { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', onTS);
+      el.removeEventListener('touchmove', onTM);
+      el.removeEventListener('touchend', onTE);
+      el.removeEventListener('touchcancel', onTE);
+    };
+    // updateVolume/applyBrightness are stable-in-practice (refs + setState only)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleTimeUpdateInternal = () => {
     const video = videoRef.current;
@@ -1891,7 +2010,8 @@ export default function Player({
         theaterMode ? 'w-full max-h-[82vh]' : ''
       }`}
     >
-      {/* Top Right Quick Controls */}
+      {/* Top Right Quick Controls (hidden in mini-player mode) */}
+      {!compact && (
       <div className="absolute top-3 right-3 z-30 flex items-center gap-2 opacity-90 group-hover/player:opacity-100 transition-opacity">
         {sleepTimerRemaining !== null && (
           <button
@@ -1931,6 +2051,7 @@ export default function Player({
           ?
         </button>
       </div>
+      )}
 
       {/* Sleep Timer Notice Banner */}
       {sleepNotice && (
@@ -2041,6 +2162,25 @@ export default function Player({
         </div>
       )}
 
+      {/* Swipe Gesture Indicator (volume / brightness) */}
+      {swipeUI && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none fade-in">
+          <div className="flex items-center gap-3 bg-black/80 backdrop-blur-md text-white pl-3 pr-4 py-2.5 rounded-2xl ring-1 ring-[#ff9900]/40 shadow-2xl">
+            {swipeUI.type === 'volume'
+              ? <IconVolume size={20} className="text-[#ff9900] shrink-0" />
+              : <IconSun size={20} className="text-[#ff9900] shrink-0" />}
+            <div className="w-28">
+              <div className="text-[11px] font-bold mb-1">
+                {swipeUI.type === 'volume' ? 'Volume' : 'Brightness'} <span className="text-[#ff9900]">{swipeUI.pct}%</span>
+              </div>
+              <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-full bg-[#ff9900] rounded-full transition-[width] duration-75" style={{ width: `${swipeUI.pct}%` }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Center Play Button Overlay when paused */}
       {!isPlaying && !hasError && !isBuffering && !isSeeking && (
         <div
@@ -2064,6 +2204,41 @@ export default function Player({
         </div>
       )}
 
+      {compact ? (
+        /* Compact mini-player control bar */
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/80 to-transparent px-2 pt-7 pb-2 flex items-center gap-1 z-30">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+            aria-label={isPlaying ? 'Pause' : 'Play'}
+            className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg hover:bg-white/10 active:bg-white/20 text-white transition-colors cursor-pointer touch-manipulation"
+          >
+            {isPlaying ? <IconPause size={20} /> : <IconPlay size={20} className="ml-0.5" />}
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+            aria-label={isMuted ? 'Unmute' : 'Mute'}
+            className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg hover:bg-white/10 active:bg-white/20 text-white transition-colors cursor-pointer touch-manipulation"
+          >
+            {isMuted || volume === 0 ? <IconVolumeMute size={18} /> : <IconVolume size={18} />}
+          </button>
+          <div className="min-w-0 flex-1 px-1">
+            <p className="text-[11px] font-semibold text-white truncate leading-tight">{title}</p>
+            <p className="text-[10px] text-[#ff9900] font-bold leading-tight">Mini player • tap ↑ to expand</p>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); if (onExpand) onExpand(); }}
+            aria-label="Back to player"
+            title="Back to player"
+            className="w-10 h-10 shrink-0 flex items-center justify-center rounded-lg hover:bg-white/10 active:bg-white/20 text-[#ff9900] transition-colors cursor-pointer touch-manipulation"
+          >
+            <IconArrowUp size={20} />
+          </button>
+        </div>
+      ) : (
+      <>
       {/* Bottom Floating Control Bar */}
       <div
         className={`absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/85 to-transparent px-3 sm:px-4 pt-8 pb-3.5 flex flex-col gap-2 transition-all duration-300 z-30 ${
@@ -2408,20 +2583,6 @@ export default function Player({
               </button>
             )}
 
-            {/* Keyboard Shortcuts Hint Button */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowShortcuts((s) => !s);
-              }}
-              aria-label="Keyboard Shortcuts (?)"
-              className="min-w-[44px] min-h-[44px] items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 hover:text-[#ff9900] transition-colors cursor-pointer touch-manipulation font-bold text-sm text-neutral-400 hidden sm:flex"
-              title="Keyboard Shortcuts (?)"
-            >
-              ?
-            </button>
-
             {/* Fullscreen Button */}
             <button
               type="button"
@@ -2438,6 +2599,8 @@ export default function Player({
           </div>
         </div>
       </div>
+      </>
+      )}
 
       {/* Reconnection / Error Overlay with Retry from last working quality */}
       {hasError && (
@@ -2498,6 +2661,14 @@ export default function Player({
               <div className="flex justify-between items-center py-1 border-b border-[#1c1c1c]">
                 <span>Double-tap left / right edge</span>
                 <kbd className="px-2 py-0.5 rounded bg-[#222] font-mono text-[#ff9900]">Seek −10s / +10s</kbd>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-[#1c1c1c]">
+                <span>Swipe up / down (left half)</span>
+                <kbd className="px-2 py-0.5 rounded bg-[#222] font-mono text-[#ff9900]">Brightness</kbd>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-[#1c1c1c]">
+                <span>Swipe up / down (right half)</span>
+                <kbd className="px-2 py-0.5 rounded bg-[#222] font-mono text-[#ff9900]">Volume</kbd>
               </div>
               <div className="flex justify-between items-center py-1 border-b border-[#1c1c1c]">
                 <span>Seek -5s / +5s</span>
