@@ -246,13 +246,13 @@ export default function Header() {
                   aria-label="Account menu"
                   className="w-11 h-11 rounded-full bg-[#ff9900] hover:bg-[#ffa826] text-black font-black text-lg flex items-center justify-center transition-colors cursor-pointer shadow-md shadow-[#ff9900]/20"
                 >
-                  {(user.name || user.email || 'U').trim().charAt(0).toUpperCase()}
+                  {(user.name || user.email || user.phone || 'U').trim().charAt(0).toUpperCase()}
                 </button>
                 {userMenuOpen && (
                   <div className="absolute right-0 top-[52px] z-50 w-64 bg-[#141414] border border-[#2a2a2a] rounded-2xl shadow-2xl overflow-hidden fade-in">
                     <div className="px-4 py-3.5 border-b border-[#222]">
                       <p className="text-sm font-bold text-white truncate">{user.name || 'Member'}</p>
-                      <p className="text-xs text-neutral-500 truncate mt-0.5">{user.email}</p>
+                      <p className="text-xs text-neutral-500 truncate mt-0.5">{user.email || user.phone}</p>
                     </div>
                     <div className="p-1.5">
                       {[
@@ -308,9 +308,9 @@ export default function Header() {
               onClick={() => setOpen(true)}
               aria-label="Account menu"
               className="w-10 h-10 rounded-full bg-[#ff9900] text-black font-black flex items-center justify-center cursor-pointer"
-              title={user.email}
+              title={user.email || user.phone}
             >
-              {(user.name || user.email || 'U').trim().charAt(0).toUpperCase()}
+              {(user.name || user.email || user.phone || 'U').trim().charAt(0).toUpperCase()}
             </button>
           ) : user === null ? (
             <button
@@ -382,7 +382,7 @@ export default function Header() {
           {user ? (
             <div className="px-2 py-3 border-b border-[#161616] mb-1">
               <p className="text-[15px] font-bold text-white truncate">{user.name || 'Member'}</p>
-              <p className="text-xs text-neutral-500 truncate mt-0.5">{user.email}</p>
+              <p className="text-xs text-neutral-500 truncate mt-0.5">{user.email || user.phone}</p>
               <button
                 type="button"
                 onClick={async () => {
