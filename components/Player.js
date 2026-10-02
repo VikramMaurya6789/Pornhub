@@ -1664,8 +1664,11 @@ export default function Player({
 
       // Only hijack keys when the user is interacting with the player —
       // otherwise arrows/space would break page scrolling in comments etc.
+      // Fullscreen always counts as player interaction (hover tracking can be
+      // stale when controls auto-hide in fullscreen).
       const playerFocused = !!(containerRef.current && activeEl && containerRef.current.contains(activeEl));
-      if (!playerHoverRef.current && !playerFocused) return;
+      const inPlayerFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      if (!playerHoverRef.current && !playerFocused && !inPlayerFullscreen) return;
 
       const video = videoRef.current;
       if (!video) return;
