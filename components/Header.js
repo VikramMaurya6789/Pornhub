@@ -31,15 +31,15 @@ const TRENDING_SUGGESTIONS = [
 export function Logo({ size = 'md' }) {
   const big = size === 'lg';
   return (
-    <Link href="/" className="flex items-center shrink-0 select-none gap-2.5 group" aria-label="OrangeHub home">
+    <Link href="/" className="flex items-center shrink-0 select-none gap-1.5 sm:gap-2.5 group" aria-label="OrangeHub home">
       <img
         src="/apple-touch-icon.png"
         alt="OrangeHub"
-        className={`rounded-lg object-contain transition-transform group-hover:scale-105 ${big ? 'w-10 h-10 ring-2 ring-[#ff9900]/40' : 'w-7 h-7 ring-1 ring-[#ff9900]/30'}`}
+        className={`rounded-lg object-contain transition-transform group-hover:scale-105 ${big ? 'w-10 h-10 ring-2 ring-[#ff9900]/40' : 'w-6 h-6 sm:w-7 sm:h-7 ring-1 ring-[#ff9900]/30'}`}
       />
       <div className="flex items-center">
-        <span className={`font-black tracking-tight text-white ${big ? 'text-4xl' : 'text-2xl'}`}>Orange</span>
-        <span className={`font-black tracking-tight text-black bg-[#ff9900] rounded-md ${big ? 'text-4xl px-3 py-1 ml-1' : 'text-2xl px-2 py-0.5 ml-1'}`}>hub</span>
+        <span className={`font-black tracking-tight text-white ${big ? 'text-4xl' : 'text-lg sm:text-2xl'}`}>Orange</span>
+        <span className={`font-black tracking-tight text-black bg-[#ff9900] rounded-md ${big ? 'text-4xl px-3 py-1 ml-1' : 'text-lg sm:text-2xl px-1.5 sm:px-2 py-0.5 ml-1'}`}>hub</span>
       </div>
     </Link>
   );
@@ -180,9 +180,9 @@ export default function Header() {
 
   return (
     <header ref={headerRef} className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-b border-[#1f1f1f]">
-      <div className="max-w-[1600px] mx-auto px-4 h-16 flex items-center gap-4">
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-4 h-16 flex items-center gap-2 sm:gap-4">
         <button
-          className="lg:hidden p-2.5 text-neutral-300 hover:text-[#ff9900] transition-colors"
+          className="lg:hidden p-2 sm:p-2.5 -ml-1 sm:ml-0 text-neutral-300 hover:text-[#ff9900] transition-colors shrink-0"
           onClick={() => setOpen(!open)}
           aria-label="Menu"
         >
@@ -318,7 +318,7 @@ export default function Header() {
           </div>
         </div>
 
-        <div className="lg:hidden ml-auto flex items-center gap-2">
+        <div className="lg:hidden ml-auto flex items-center gap-1.5 sm:gap-2 shrink-0">
           {user ? (
             <button
               type="button"
@@ -333,14 +333,14 @@ export default function Header() {
             <button
               type="button"
               onClick={() => openAuthModal('signin')}
-              className="text-xs font-black bg-[#ff9900] text-black px-4 py-2.5 rounded-full hover:bg-[#e68a00] transition-colors cursor-pointer whitespace-nowrap"
+              className="text-xs font-black bg-[#ff9900] text-black px-3 py-2 sm:px-4 sm:py-2.5 rounded-full hover:bg-[#e68a00] transition-colors cursor-pointer whitespace-nowrap"
             >
               Sign In
             </button>
           ) : null}
           <Link
             href="/categories"
-            className="md:hidden text-xs font-semibold bg-[#ff9900] text-black px-3.5 py-2.5 rounded-full hover:bg-[#e68a00] transition-colors"
+            className="md:hidden text-xs font-semibold bg-[#ff9900] text-black px-3 py-2 rounded-full hover:bg-[#e68a00] transition-colors whitespace-nowrap shrink-0"
           >
             Browse
           </Link>
