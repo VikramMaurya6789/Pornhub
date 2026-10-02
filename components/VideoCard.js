@@ -252,8 +252,6 @@ export default function VideoCard({ v, index = 0 }) {
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); setTouchMenuOpen((o) => !o); }}
-          onPointerDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
           className="absolute top-2 right-2 w-11 h-11 rounded-full bg-black/75 text-neutral-200 flex [@media(hover:hover)]:hidden items-center justify-center shadow-md z-30 active:scale-90 cursor-pointer"
           title={touchMenuOpen ? 'Close' : 'More actions'}
           aria-label={touchMenuOpen ? 'Close' : 'More actions'}
@@ -270,8 +268,6 @@ export default function VideoCard({ v, index = 0 }) {
         <button
           type="button"
           onClick={(e) => { setTouchMenuOpen(false); hideVideo(e); }}
-          onPointerDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
           className={`absolute top-2 right-26 [@media(hover:none)]:right-38 w-11 h-11 rounded-full bg-black/75 text-neutral-300 hover:text-red-400 hover:bg-black/90 opacity-0 group-hover:opacity-100 ${touchVis} transition-all flex items-center justify-center shadow-md z-30 hover:scale-110 active:scale-90 cursor-pointer`}
           title="Not interested / Hide video"
           aria-label="Hide video"
@@ -283,8 +279,6 @@ export default function VideoCard({ v, index = 0 }) {
         <button
           type="button"
           onClick={(e) => { setTouchMenuOpen(false); toggleWL(e); }}
-          onPointerDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
           className={`absolute top-2 right-14 [@media(hover:none)]:right-26 w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-md z-30 cursor-pointer ${
             isWL
               ? 'bg-[#ff9900] text-black opacity-100'
@@ -300,8 +294,6 @@ export default function VideoCard({ v, index = 0 }) {
         <button
           type="button"
           onClick={(e) => { setTouchMenuOpen(false); toggleFav(e); }}
-          onPointerDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
           className={`absolute top-2 right-2 [@media(hover:none)]:right-14 w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-md z-30 cursor-pointer ${
             isFav
               ? 'bg-[#ff9900] text-black opacity-100 scale-100 heart-pop'
