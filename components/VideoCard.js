@@ -34,6 +34,11 @@ export default function VideoCard({ v, index = 0 }) {
   const [isHovered, setIsHovered] = useState(false);
   const [canHoverVideo, setCanHoverVideo] = useState(false);
   const [isDataSaver, setIsDataSaver] = useState(false);
+  // Touch devices: the 3 overlay action buttons hide behind a single "more" button
+  const [touchMenuOpen, setTouchMenuOpen] = useState(false);
+  const touchVis = touchMenuOpen
+    ? '[@media(hover:none)]:opacity-100 [@media(hover:none)]:pointer-events-auto'
+    : '[@media(hover:none)]:opacity-0 [@media(hover:none)]:pointer-events-none';
   const [isHidden, setIsHidden] = useState(() => {
     if (typeof window === 'undefined') return false;
     try {
@@ -312,13 +317,31 @@ export default function VideoCard({ v, index = 0 }) {
           ) : null;
         })()}
 
+        {/* Touch-only "more" button: reveals the 3 action buttons (they stay hover-only on desktop) */}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setTouchMenuOpen((o) => !o); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          className="absolute top-2 right-2 w-9 h-9 rounded-full bg-black/75 text-neutral-200 flex [@media(hover:hover)]:hidden items-center justify-center shadow-md z-30 active:scale-90 cursor-pointer"
+          title={touchMenuOpen ? 'Close' : 'More actions'}
+          aria-label={touchMenuOpen ? 'Close' : 'More actions'}
+          aria-expanded={touchMenuOpen}
+        >
+          {touchMenuOpen ? (
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          ) : (
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="5" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="12" cy="19" r="1.8" /></svg>
+          )}
+        </button>
+
         {/* Not Interested / Hide Video Button */}
         <button
           type="button"
-          onClick={hideVideo}
+          onClick={(e) => { setTouchMenuOpen(false); hideVideo(e); }}
           onPointerDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
-          className="absolute top-2 right-26 w-11 h-11 rounded-full bg-black/75 text-neutral-300 hover:text-red-400 hover:bg-black/90 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-all flex items-center justify-center shadow-md z-30 hover:scale-110 active:scale-90 cursor-pointer"
+          className={`absolute top-2 right-26 [@media(hover:none)]:right-38 w-11 h-11 rounded-full bg-black/75 text-neutral-300 hover:text-red-400 hover:bg-black/90 opacity-0 group-hover:opacity-100 ${touchVis} transition-all flex items-center justify-center shadow-md z-30 hover:scale-110 active:scale-90 cursor-pointer`}
           title="Not interested / Hide video"
           aria-label="Hide video"
         >
@@ -328,13 +351,13 @@ export default function VideoCard({ v, index = 0 }) {
         {/* Watch Later Button */}
         <button
           type="button"
-          onClick={toggleWL}
+          onClick={(e) => { setTouchMenuOpen(false); toggleWL(e); }}
           onPointerDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
-          className={`absolute top-2 right-14 w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-md z-30 cursor-pointer ${
+          className={`absolute top-2 right-14 [@media(hover:none)]:right-26 w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-md z-30 cursor-pointer ${
             isWL
               ? 'bg-[#ff9900] text-black opacity-100'
-              : 'bg-black/75 text-neutral-300 hover:text-white opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 hover:scale-110 active:scale-90'
+              : `bg-black/75 text-neutral-300 hover:text-white opacity-0 group-hover:opacity-100 ${touchVis} hover:scale-110 active:scale-90`
           }`}
           title={isWL ? 'Saved to Watch Later' : 'Watch Later'}
           aria-label={isWL ? 'Remove from Watch Later' : 'Watch Later'}
@@ -345,13 +368,13 @@ export default function VideoCard({ v, index = 0 }) {
         {/* Quick Save / Favorite Heart Button with Heart Pop Animation */}
         <button
           type="button"
-          onClick={toggleFav}
+          onClick={(e) => { setTouchMenuOpen(false); toggleFav(e); }}
           onPointerDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
-          className={`absolute top-2 right-2 w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-md z-30 cursor-pointer ${
+          className={`absolute top-2 right-2 [@media(hover:none)]:right-14 w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-md z-30 cursor-pointer ${
             isFav
               ? 'bg-[#ff9900] text-black opacity-100 scale-100 heart-pop'
-              : 'bg-black/75 text-neutral-300 hover:text-white opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 hover:scale-110 active:scale-90'
+              : `bg-black/75 text-neutral-300 hover:text-white opacity-0 group-hover:opacity-100 ${touchVis} hover:scale-110 active:scale-90`
           }`}
           title={isFav ? 'Saved to Favorites' : 'Add to Favorites'}
           aria-label={isFav ? 'Remove from Favorites' : 'Add to Favorites'}
