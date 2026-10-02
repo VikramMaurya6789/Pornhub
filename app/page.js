@@ -288,7 +288,7 @@ export default function HomePage() {
           {/* Hero Banner */}
           {hero ? (
             <Link href={`/watch/${hero.vkey}`} prefetch={false} className="fade-in group relative block rounded-2xl overflow-hidden ring-1 ring-white/10">
-              <div className="relative aspect-[21/8] min-h-[260px] md:min-h-[300px]">
+              <div className="relative aspect-[16/9] sm:aspect-[21/8] min-h-[190px] md:min-h-[300px]">
                 <img
                   src={hero.thumbnail}
                   alt={hero.title || 'Featured Today'}
@@ -299,11 +299,11 @@ export default function HomePage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
-                <div className="absolute bottom-0 left-0 p-6 md:p-8 max-w-2xl">
-                  <span className="inline-flex items-center gap-1.5 bg-[#ff9900] text-black text-[11px] font-black px-2.5 py-1 rounded-md mb-3 uppercase tracking-wide">
+                <div className="absolute bottom-0 left-0 p-4 md:p-8 max-w-2xl">
+                  <span className="inline-flex items-center gap-1.5 bg-[#ff9900] text-black text-[11px] font-black px-2.5 py-1 rounded-md mb-2 md:mb-3 uppercase tracking-wide">
                     <IconFlame size={13} /> Featured Today • Daily Fresh Pick
                   </span>
-                  <h1 className="clamp-2 text-xl sm:text-2xl md:text-3xl font-black text-white leading-tight mb-2 group-hover:text-[#ff9900] transition-colors">{hero.title}</h1>
+                  <h1 className="clamp-2 text-lg sm:text-2xl md:text-3xl font-black text-white leading-tight mb-2 group-hover:text-[#ff9900] transition-colors">{hero.title}</h1>
                   <div className="flex items-center gap-4 text-sm text-neutral-300">
                     {hero.duration && <span className="bg-white/10 px-2 py-0.5 rounded text-[13px]">{hero.duration !== '0:00' && hero.duration !== '0' ? hero.duration : '--:--'}</span>}
                     {hero.views && <span>{hero.views}</span>}
@@ -313,7 +313,7 @@ export default function HomePage() {
               </div>
             </Link>
           ) : !err && (
-            <div className="aspect-[21/8] min-h-[260px] md:min-h-[300px] rounded-2xl skeleton" />
+            <div className="aspect-[16/9] sm:aspect-[21/8] min-h-[190px] md:min-h-[300px] rounded-2xl skeleton" />
           )}
 
           {err && (
@@ -323,9 +323,9 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Trending Searches Strip */}
+          {/* Trending Searches Strip (desktop only — mobile uses the chip row above) */}
           {trendingSearches.length > 0 && (
-            <section className="mt-6 p-4 rounded-2xl bg-[#121212] border border-[#222]">
+            <section className="hidden sm:block mt-6 p-4 rounded-2xl bg-[#121212] border border-[#222]">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-[#ff9900]"><IconFlame size={18} /></span>
                 <h2 className="text-sm font-bold text-white uppercase tracking-wider">Trending Searches</h2>

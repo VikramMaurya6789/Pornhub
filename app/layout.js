@@ -7,6 +7,7 @@ import StartingAnimation from '../components/StartingAnimation';
 import FirebaseAnalytics from '../components/FirebaseAnalytics';
 import ServiceWorkerRegister from '../components/ServiceWorkerRegister';
 import PwaInstallBanner from '../components/PwaInstallBanner';
+import MobileBottomNav from '../components/MobileBottomNav';
 
 export const viewport = {
   themeColor: '#FF9000',
@@ -157,7 +158,7 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-      <body className="min-h-screen bg-black text-neutral-200 antialiased" suppressHydrationWarning>
+      <body className="min-h-screen bg-black text-neutral-200 antialiased pb-[64px] lg:pb-0" suppressHydrationWarning>
         <ServiceWorkerRegister />
         <FirebaseAnalytics />
         <StartingAnimation />
@@ -167,6 +168,7 @@ export default function RootLayout({ children }) {
         <Header />
         <main className="min-h-[70vh]">{children}</main>
         <Footer />
+        <MobileBottomNav />
       </body>
     </html>
   );

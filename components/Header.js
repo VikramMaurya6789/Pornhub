@@ -93,6 +93,24 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Mobile bottom-nav search button: scroll to top and focus the search field
+  useEffect(() => {
+    const focusSearch = () => {
+      setSearchFocused(true);
+      try {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch {}
+      setTimeout(() => {
+        const el = headerRef.current && headerRef.current.querySelector('input[placeholder="Search videos..."]');
+        if (el) {
+          try { el.focus({ preventScroll: true }); } catch { el.focus(); }
+        }
+      }, 400);
+    };
+    window.addEventListener('oh_focus_search', focusSearch);
+    return () => window.removeEventListener('oh_focus_search', focusSearch);
+  }, []);
+
   const goSearch = (queryStr) => {
     const target = (queryStr || q).trim();
     if (!target) return;
