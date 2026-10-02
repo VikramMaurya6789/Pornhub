@@ -257,6 +257,11 @@ function WatchContent() {
 
   useEffect(() => {
     if (!vkey) return;
+    // New video: clear stale data immediately + guard against out-of-order fetches
+    setV(null);
+    setErr(null);
+    setComments([]);
+    let cancelled = false;
     try {
       setVote(localStorage.getItem(`oh_vote_${vkey}`));
       setSaved(!hasRejectedFunctional() && localStorage.getItem(`oh_saved_${vkey}`) === '1');
@@ -328,6 +333,7 @@ function WatchContent() {
         }
         const j = await r.json();
         if (!r.ok) throw new Error(j.error || 'Failed to load video');
+        if (cancelled) return;
         setV(j);
 
         // Check author subscription
@@ -367,14 +373,17 @@ function WatchContent() {
           seenKeys.add(key);
           return true;
         });
+        if (cancelled) return;
         setComments(allComments.map((c, i) => ({
           ...c,
           user: c?.user || 'User_' + (i + 1),
         })));
       } catch (e) {
-        setErr(e.message);
+        if (!cancelled) setErr(e.message);
       }
     })();
+
+    return () => { cancelled = true; };
   }, [vkey]);
 
   // Track scroll position to trigger mini-player notification
@@ -873,6 +882,7 @@ function WatchContent() {
             <div className="aspect-video rounded-xl skeleton" />
           ) : (
             <Player
+              key={vkey}
               vkey={vkey}
               title={v.title}
               streams={v.streams}

@@ -30,10 +30,6 @@ function getProgressMap() {
 }
 
 export default function VideoCard({ v, index = 0 }) {
-  const [scrubPos, setScrubPos] = useState(null);
-  const [isHovered, setIsHovered] = useState(false);
-  const [canHoverVideo, setCanHoverVideo] = useState(false);
-  const [isDataSaver, setIsDataSaver] = useState(false);
   // Touch devices: the 3 overlay action buttons hide behind a single "more" button
   const [touchMenuOpen, setTouchMenuOpen] = useState(false);
   const touchVis = touchMenuOpen
@@ -50,7 +46,6 @@ export default function VideoCard({ v, index = 0 }) {
     } catch {}
     return false;
   });
-  const videoRef = useRef(null);
 
   const [isFav, setIsFav] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -94,21 +89,6 @@ export default function VideoCard({ v, index = 0 }) {
   };
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
-      setCanHoverVideo(true);
-    }
-
-    try {
-      setIsDataSaver(localStorage.getItem('oh_datasaver') === '1');
-    } catch {}
-
-    const onDataSaver = () => {
-      try {
-        setIsDataSaver(localStorage.getItem('oh_datasaver') === '1');
-      } catch {}
-    };
-    window.addEventListener('oh_datasaver_changed', onDataSaver);
-
     const handleConsent = () => {
       try {
         if (hasRejectedFunctional()) {
@@ -129,36 +109,9 @@ export default function VideoCard({ v, index = 0 }) {
     window.addEventListener(WATCHLATER_CHANGED_EVENT, handleWLChanged);
     return () => {
       window.removeEventListener('oh_consent_changed', handleConsent);
-      window.removeEventListener('oh_datasaver_changed', onDataSaver);
       window.removeEventListener(WATCHLATER_CHANGED_EVENT, handleWLChanged);
     };
   }, [v.vkey]);
-
-  const handleMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const percent = Math.max(0, Math.min(100, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
-    setScrubPos(percent);
-  };
-
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-    if (videoRef.current) {
-      try {
-        videoRef.current.play().catch(() => {});
-      } catch {}
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setScrubPos(null);
-    setIsHovered(false);
-    if (videoRef.current) {
-      try {
-        videoRef.current.pause();
-        videoRef.current.currentTime = 0;
-      } catch {}
-    }
-  };
 
   const toggleFav = (e) => {
     if (e) {
@@ -258,30 +211,8 @@ export default function VideoCard({ v, index = 0 }) {
       style={{ animationDelay: `${Math.min(index, 24) * 35}ms` }}
     >
       <div
-        onMouseEnter={handleMouseEnter}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
         className="shine-hover relative aspect-video rounded-xl overflow-hidden bg-[#141414] ring-1 ring-white/5 group-hover:ring-[#ff9900]/60 transition-all duration-300"
       >
-        {/* Hover Video Preview for desktop (disabled when Data Saver is active) */}
-        {canHoverVideo && !isDataSaver && v.preview && isHovered && (
-          <video
-            ref={videoRef}
-            src={v.preview}
-            muted
-            loop
-            playsInline
-            autoPlay
-            preload="none"
-            className="absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-200"
-            onLoadedData={(e) => {
-              try {
-                e.currentTarget.play().catch(() => {});
-              } catch {}
-            }}
-          />
-        )}
-
         {imgFailed ? (
           <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#181818] to-[#0c0c0c] text-[#ff9900] select-none">
             <div className="w-11 h-11 rounded-full bg-black/60 border border-[#ff9900]/40 flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:border-[#ff9900] transition-all duration-300">
@@ -381,21 +312,6 @@ export default function VideoCard({ v, index = 0 }) {
         >
           <IconHeart size={18} className={isFav ? 'fill-black' : ''} />
         </button>
-
-        {/* Live Scrubbing Bar on Hover */}
-        {scrubPos !== null && (
-          <>
-            <span className="absolute top-2 left-2 bg-black/85 text-[10px] font-bold text-[#ff9900] px-1.5 py-0.5 rounded shadow z-10">
-              Preview
-            </span>
-            <div className="absolute inset-x-0 bottom-0 h-1.5 bg-black/70 z-20">
-              <div
-                className="h-full bg-[#ff9900] transition-all duration-75"
-                style={{ width: `${scrubPos}%` }}
-              />
-            </div>
-          </>
-        )}
 
         {v.duration ? (
           <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[11px] font-semibold px-1.5 py-0.5 rounded z-10">
