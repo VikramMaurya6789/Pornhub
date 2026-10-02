@@ -4,8 +4,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   IconSearch, IconHome, IconFlame, IconEye, IconStar, IconGrid,
-  IconMenu, IconX, IconHeart, IconClock, IconTag, IconSparkles
+  IconMenu, IconX, IconHeart, IconClock, IconTag, IconSparkles, IconHistory
 } from './Icons';
+import AuthModal from './AuthModal';
+import { fetchMe, getCachedUser, openAuthModal, signOut as authSignOut, subscribeAuth } from '../lib/auth-client';
 
 const NAV = [
   { href: '/', label: 'Home', icon: IconHome },
@@ -49,8 +51,29 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
+  const [user, setUser] = useState(undefined); // undefined = loading, null = guest
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const headerRef = useRef(null);
   const router = useRouter();
+
+  // Auth state
+  useEffect(() => {
+    setUser(getCachedUser() === undefined ? undefined : getCachedUser());
+    fetchMe();
+    return subscribeAuth(() => setUser(getCachedUser()));
+  }, []);
+
+  // Close user menu on outside click
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onDown = (e) => {
+      if (e.target && e.target.closest && !e.target.closest('.auth-menu-container')) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', onDown);
+    return () => document.removeEventListener('pointerdown', onDown);
+  }, [userMenuOpen]);
 
   // Load recent searches
   useEffect(() => {
@@ -212,9 +235,92 @@ export default function Header() {
               </Link>
             ))}
           </nav>
+
+          {/* Auth: Sign In button or user menu */}
+          <div className="flex items-center pl-2 ml-1 border-l border-white/10">
+            {user ? (
+              <div className="relative auth-menu-container">
+                <button
+                  type="button"
+                  onClick={() => setUserMenuOpen((o) => !o)}
+                  aria-label="Account menu"
+                  className="w-11 h-11 rounded-full bg-[#ff9900] hover:bg-[#ffa826] text-black font-black text-lg flex items-center justify-center transition-colors cursor-pointer shadow-md shadow-[#ff9900]/20"
+                >
+                  {(user.name || user.email || 'U').trim().charAt(0).toUpperCase()}
+                </button>
+                {userMenuOpen && (
+                  <div className="absolute right-0 top-[52px] z-50 w-64 bg-[#141414] border border-[#2a2a2a] rounded-2xl shadow-2xl overflow-hidden fade-in">
+                    <div className="px-4 py-3.5 border-b border-[#222]">
+                      <p className="text-sm font-bold text-white truncate">{user.name || 'Member'}</p>
+                      <p className="text-xs text-neutral-500 truncate mt-0.5">{user.email}</p>
+                    </div>
+                    <div className="p-1.5">
+                      {[
+                        { href: '/watchlater', label: 'Watch Later', icon: IconClock },
+                        { href: '/favorites', label: 'Favorites', icon: IconHeart },
+                        { href: '/history', label: 'Watch History', icon: IconHistory },
+                        { href: '/playlists', label: 'Playlists', icon: IconTag },
+                      ].map((l) => (
+                        <Link
+                          key={l.href}
+                          href={l.href}
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-3 min-h-[44px] rounded-xl text-sm text-neutral-300 hover:text-white hover:bg-[#1f1f1f] transition-colors"
+                        >
+                          <l.icon size={16} className="text-neutral-500" />
+                          {l.label}
+                        </Link>
+                      ))}
+                    </div>
+                    <div className="p-1.5 border-t border-[#222]">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setUserMenuOpen(false);
+                          await authSignOut();
+                        }}
+                        className="w-full flex items-center gap-3 px-3 min-h-[44px] rounded-xl text-sm font-bold text-red-400 hover:bg-red-950/40 transition-colors cursor-pointer"
+                      >
+                        <IconX size={16} />
+                        Sign out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : user === null ? (
+              <button
+                type="button"
+                onClick={() => openAuthModal('signin')}
+                className="flex items-center gap-2 px-5 min-h-[44px] rounded-xl bg-[#ff9900] hover:bg-[#ffa826] text-black text-sm font-black shadow-md shadow-[#ff9900]/20 transition-all cursor-pointer active:scale-95 whitespace-nowrap"
+              >
+                <IconUser size={16} />
+                Sign In
+              </button>
+            ) : null}
+          </div>
         </div>
 
         <div className="lg:hidden ml-auto flex items-center gap-2">
+          {user ? (
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              aria-label="Account menu"
+              className="w-10 h-10 rounded-full bg-[#ff9900] text-black font-black flex items-center justify-center cursor-pointer"
+              title={user.email}
+            >
+              {(user.name || user.email || 'U').trim().charAt(0).toUpperCase()}
+            </button>
+          ) : user === null ? (
+            <button
+              type="button"
+              onClick={() => openAuthModal('signin')}
+              className="text-xs font-black bg-[#ff9900] text-black px-4 py-2.5 rounded-full hover:bg-[#e68a00] transition-colors cursor-pointer whitespace-nowrap"
+            >
+              Sign In
+            </button>
+          ) : null}
           <Link
             href="/categories"
             className="md:hidden text-xs font-semibold bg-[#ff9900] text-black px-3.5 py-2.5 rounded-full hover:bg-[#e68a00] transition-colors"
@@ -273,6 +379,33 @@ export default function Header() {
       {/* Mobile Drawer Menu */}
       {open && (
         <nav className="lg:hidden border-t border-[#1f1f1f] px-4 py-2 fade-in">
+          {user ? (
+            <div className="px-2 py-3 border-b border-[#161616] mb-1">
+              <p className="text-[15px] font-bold text-white truncate">{user.name || 'Member'}</p>
+              <p className="text-xs text-neutral-500 truncate mt-0.5">{user.email}</p>
+              <button
+                type="button"
+                onClick={async () => {
+                  setOpen(false);
+                  await authSignOut();
+                }}
+                className="mt-2.5 min-h-[44px] px-4 rounded-xl text-sm font-bold text-red-400 bg-red-950/40 border border-red-900/50 cursor-pointer"
+              >
+                Sign out
+              </button>
+            </div>
+          ) : user === null ? (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                openAuthModal('signin');
+              }}
+              className="w-full min-h-[48px] my-2 rounded-2xl bg-[#ff9900] text-black text-sm font-black cursor-pointer"
+            >
+              Sign In / Register
+            </button>
+          ) : null}
           {NAV.map((n) => (
             <Link
               key={n.href}
@@ -286,6 +419,7 @@ export default function Header() {
           ))}
         </nav>
       )}
+      <AuthModal />
     </header>
   );
 }

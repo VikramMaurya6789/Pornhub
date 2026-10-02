@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import prisma from '../../../../lib/db.js';
+import { getEffectiveUid } from '../../../../lib/auth.js';
 
 export async function GET(req, { params }) {
   try {
     const { id } = await params;
     const { searchParams } = new URL(req.url);
-    const uid = searchParams.get('uid') || '';
+    const uid = (await getEffectiveUid(searchParams.get('uid') || '')) || '';
 
     if (!id) {
       return NextResponse.json({ error: 'Missing playlist id' }, { status: 400 });
@@ -40,7 +41,7 @@ export async function DELETE(req, { params }) {
   try {
     const { id } = await params;
     const { searchParams } = new URL(req.url);
-    const uid = searchParams.get('uid') || '';
+    const uid = await getEffectiveUid(searchParams.get('uid') || '');
 
     if (!id) {
       return NextResponse.json({ error: 'Missing playlist id' }, { status: 400 });

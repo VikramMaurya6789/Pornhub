@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '../../../lib/db.js';
+import { getEffectiveUid } from '../../../lib/auth.js';
 
 function getUserId(req, body = null) {
   const { searchParams } = new URL(req.url);
@@ -19,7 +20,7 @@ function getUserId(req, body = null) {
 // GET /api/history?uid=
 export async function GET(req) {
   try {
-    const uid = getUserId(req);
+    const uid = await getEffectiveUid(getUserId(req));
     if (!uid) {
       return NextResponse.json({ history: [] }, { status: 200 });
     }
@@ -48,7 +49,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
     }
 
-    const uid = getUserId(req, body);
+    const uid = await getEffectiveUid(getUserId(req, body));
     const vkey = body?.vkey;
     const title = body?.title || null;
     const thumbnail = body?.thumbnail || null;
@@ -103,7 +104,7 @@ export async function DELETE(req) {
       } catch {}
     }
 
-    const uid = getUserId(req, body);
+    const uid = await getEffectiveUid(getUserId(req, body));
 
     if (!uid) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 });

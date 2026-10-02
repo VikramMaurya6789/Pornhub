@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import prisma from '../../../lib/db.js';
+import { getEffectiveUid } from '../../../lib/auth.js';
 
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
-    const uid = (searchParams.get('uid') || '').trim();
+    const uid = await getEffectiveUid((searchParams.get('uid') || '').trim());
 
     if (!uid) {
       return NextResponse.json({ error: 'Missing uid' }, { status: 400 });
@@ -34,7 +35,7 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     const body = await req.json();
-    const uid = (body.uid || '').trim();
+    const uid = await getEffectiveUid((body.uid || '').trim());
     const name = (body.name || '').trim();
     const isPublic = body.isPublic !== undefined ? Boolean(body.isPublic) : true;
 
