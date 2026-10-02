@@ -4,8 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   IconSearch, IconHome, IconFlame, IconEye, IconStar, IconGrid,
-  IconMenu, IconX, IconHeart, IconClock, IconTag, IconSparkles,
-  IconShield, IconWifi
+  IconMenu, IconX, IconHeart, IconClock, IconTag, IconSparkles
 } from './Icons';
 
 const NAV = [
@@ -50,51 +49,15 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
-  const [dataSaver, setDataSaver] = useState(false);
   const headerRef = useRef(null);
   const router = useRouter();
 
-  // Load recent searches and data saver state
+  // Load recent searches
   useEffect(() => {
     try {
       const stored = localStorage.getItem('oh_recent_searches');
       if (stored) setRecentSearches(JSON.parse(stored));
-      setDataSaver(localStorage.getItem('oh_datasaver') === '1');
     } catch {}
-
-    const onDataSaver = () => {
-      try {
-        setDataSaver(localStorage.getItem('oh_datasaver') === '1');
-      } catch {}
-    };
-    window.addEventListener('oh_datasaver_changed', onDataSaver);
-    return () => window.removeEventListener('oh_datasaver_changed', onDataSaver);
-  }, []);
-
-  const toggleDataSaver = () => {
-    const next = !dataSaver;
-    setDataSaver(next);
-    try {
-      localStorage.setItem('oh_datasaver', next ? '1' : '0');
-      window.dispatchEvent(new CustomEvent('oh_datasaver_changed'));
-    } catch {}
-  };
-
-  const handlePanic = () => {
-    window.location.replace('https://www.google.com');
-  };
-
-  // Keyboard shortcut: Escape triggers Panic button if not in an input
-  useEffect(() => {
-    const handleKeyDownGlobal = (e) => {
-      if (e.key === 'Escape') {
-        const tag = document.activeElement?.tagName?.toLowerCase();
-        if (tag === 'input' || tag === 'textarea') return;
-        handlePanic();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDownGlobal);
-    return () => window.removeEventListener('keydown', handleKeyDownGlobal);
   }, []);
 
   // Handle outside clicks to close autocomplete dropdown
@@ -249,45 +212,9 @@ export default function Header() {
               </Link>
             ))}
           </nav>
-
-          {/* Quick Header Actions: Data Saver & Panic */}
-          <div className="flex items-center gap-2 pl-2 border-l border-white/10">
-            <button
-              type="button"
-              onClick={toggleDataSaver}
-              className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-                dataSaver
-                  ? 'bg-[#152415] border-green-600/70 text-green-400'
-                  : 'bg-[#1c1c1c] border-[#2c2c2c] text-neutral-400 hover:text-white'
-              }`}
-              title="Data saver mode (lower resolution, disable autoplay previews)"
-            >
-              <IconWifi size={14} className={dataSaver ? 'text-green-400' : 'text-neutral-500'} />
-              <span className="hidden xl:inline">{dataSaver ? 'Data Saver: ON' : 'Data Saver'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handlePanic}
-              className="px-2.5 py-1.5 rounded-xl bg-red-950/40 border border-red-800/60 text-red-400 hover:bg-red-900/60 hover:text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
-              title="Panic button / Boss key (Esc) — Quick exit to Google"
-            >
-              <IconShield size={14} />
-              <span>Panic</span>
-            </button>
-          </div>
         </div>
 
         <div className="lg:hidden ml-auto flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handlePanic}
-            className="px-2.5 py-2.5 rounded-full bg-red-950/60 border border-red-800/60 text-red-400 text-xs font-bold flex items-center gap-1"
-            title="Panic button / Boss key (Esc)"
-          >
-            <IconShield size={13} />
-            <span>Panic</span>
-          </button>
           <Link
             href="/categories"
             className="md:hidden text-xs font-semibold bg-[#ff9900] text-black px-3.5 py-2.5 rounded-full hover:bg-[#e68a00] transition-colors"
