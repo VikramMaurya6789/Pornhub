@@ -104,7 +104,7 @@ export default function PwaInstallBanner() {
   return (
     <aside
       aria-label="Install app banner"
-      className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 bg-[#141414]/95 backdrop-blur-xl border border-[#2a2a2a] text-white p-4 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.8)] ring-1 ring-white/10 fade-in"
+      className="fixed bottom-[80px] lg:bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 bg-[#141414]/95 backdrop-blur-xl border border-[#2a2a2a] text-white p-4 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.8)] ring-1 ring-white/10 fade-in"
     >
       <div className="flex items-start gap-3.5">
         {/* App Icon */}

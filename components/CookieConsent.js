@@ -96,7 +96,7 @@ export default function CookieConsent() {
 
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 p-3 z-50 sm:p-0 sm:bottom-4 sm:left-1/2 sm:-translate-x-1/2 sm:max-w-3xl sm:w-[calc(100%-2rem)] ${
+      className={`fixed left-0 right-0 p-3 z-50 bottom-[64px] sm:p-0 sm:bottom-[80px] lg:bottom-4 sm:left-1/2 sm:-translate-x-1/2 sm:max-w-3xl sm:w-[calc(100%-2rem)] ${
         isExiting ? 'cookie-slide-down' : 'cookie-slide-up'
       }`}
       role="region"
