@@ -2572,7 +2572,7 @@ export default function Player({
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
                 aria-label="Playback speed"
-                className="min-h-[44px] min-w-[44px] flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-white hover:text-[#ff9900] text-[11px] sm:text-xs font-bold transition-colors cursor-pointer touch-manipulation pointer-events-auto"
+                className="min-h-[44px] min-w-[44px] flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg hover:bg-white/10 active:bg-white/20 text-white hover:text-[#ff9900] text-[11px] sm:text-xs font-bold transition-colors cursor-pointer touch-manipulation pointer-events-auto"
                 title="Playback Speed"
               >
                 <IconSpeed size={14} />
@@ -2619,7 +2619,7 @@ export default function Player({
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
                 aria-label="Video quality settings"
-                className="min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-white hover:text-[#ff9900] text-xs font-bold transition-colors cursor-pointer touch-manipulation pointer-events-auto"
+                className="min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 text-white hover:text-[#ff9900] text-xs font-bold transition-colors cursor-pointer touch-manipulation pointer-events-auto"
                 title="Quality Settings"
               >
                 <IconSettings size={15} />
@@ -2638,9 +2638,9 @@ export default function Player({
                     type="button"
                     onClick={(e) => { e.stopPropagation(); toggleLoop(); }}
                     aria-label={loop ? 'Disable loop' : 'Loop this video'}
-                    className="sm:hidden w-full flex items-center justify-between px-3 py-2 border-b border-[#222] cursor-pointer min-h-[44px]"
+                    className="sm:hidden w-full flex items-center justify-between min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-[#222] transition-colors cursor-pointer touch-manipulation"
                   >
-                    <span className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                    <span className="flex items-center gap-2">
                       <IconRefresh size={14} className="text-[#ff9900]" /> Loop video
                     </span>
                     <span
@@ -2661,9 +2661,9 @@ export default function Player({
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); haptic(); setShowSettingsMenu(false); setShowQueue(true); }}
-                    className="sm:hidden w-full flex items-center justify-between px-3 py-2 border-b border-[#222] cursor-pointer min-h-[44px]"
+                    className="sm:hidden w-full flex items-center justify-between min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-[#222] transition-colors cursor-pointer touch-manipulation"
                   >
-                    <span className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                    <span className="flex items-center gap-2">
                       <IconList size={14} className="text-[#ff9900]" /> Up Next
                       {queue.length > 0 && (
                         <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-[#ff9900]/20 text-[#ff9900]">
@@ -2679,9 +2679,9 @@ export default function Player({
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setShowSettingsMenu(false); handleCast(); }}
-                      className="sm:hidden w-full flex items-center justify-between px-3 py-2 border-b border-[#222] cursor-pointer min-h-[44px]"
+                      className="sm:hidden w-full flex items-center justify-between min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-[#222] transition-colors cursor-pointer touch-manipulation"
                     >
-                      <span className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                      <span className="flex items-center gap-2">
                         <IconCast size={14} className="text-[#ff9900]" /> Cast to TV
                       </span>
                       {isCasting && <span className="text-[10px] font-bold text-[#ff9900]">Connected</span>}
@@ -2692,9 +2692,11 @@ export default function Player({
                     type="button"
                     onClick={toggleAutoplaySetting}
                     aria-label="Toggle Autoplay Next"
-                    className="w-full flex items-center justify-between px-3 py-2 border-b border-[#222] cursor-pointer min-h-[44px]"
+                    className="w-full flex items-center justify-between min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-[#222] transition-colors cursor-pointer touch-manipulation"
                   >
-                    <span className="text-xs font-semibold text-neutral-300">Autoplay</span>
+                    <span className="flex items-center gap-2">
+                      <IconPlayNext size={14} className="text-[#ff9900]" /> Autoplay
+                    </span>
                     <span
                       aria-hidden="true"
                       className={`w-11 h-6 rounded-full transition-colors relative shrink-0 flex items-center ${
@@ -2712,10 +2714,10 @@ export default function Player({
                     type="button"
                     onClick={toggleAmbient}
                     aria-label="Toggle Ambient Light"
-                    className="w-full flex items-center justify-between px-3 py-2 border-b border-[#222] cursor-pointer min-h-[44px]"
+                    className="w-full flex items-center justify-between min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-[#222] transition-colors cursor-pointer touch-manipulation"
                   >
-                    <span className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
-                      <IconSparkles size={12} className="text-[#ff9900]" /> Ambient Light
+                    <span className="flex items-center gap-2">
+                      <IconSparkles size={14} className="text-[#ff9900]" /> Ambient Light
                     </span>
                     <span
                       aria-hidden="true"
@@ -2730,7 +2732,7 @@ export default function Player({
                       />
                     </span>
                   </button>
-                  <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-neutral-500 border-b border-[#222]">
+                  <div className="px-3.5 pt-2.5 pb-1 text-[10px] uppercase font-bold tracking-wider text-neutral-500">
                     Quality
                   </div>
                   <button
@@ -2762,7 +2764,7 @@ export default function Player({
                   ))}
 
                   {/* Sleep Timer Selector */}
-                  <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-neutral-500 border-t border-b border-[#222] flex items-center justify-between mt-1">
+                  <div className="px-3.5 pt-2.5 pb-1 text-[10px] uppercase font-bold tracking-wider text-neutral-500 flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
                       <IconMoon size={11} className="text-[#ff9900]" /> Sleep Timer
                     </span>

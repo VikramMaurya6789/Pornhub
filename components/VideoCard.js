@@ -323,7 +323,7 @@ export default function VideoCard({ v, index = 0 }) {
           onClick={(e) => { e.stopPropagation(); setTouchMenuOpen((o) => !o); }}
           onPointerDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
-          className="absolute top-2 right-2 w-9 h-9 rounded-full bg-black/75 text-neutral-200 flex [@media(hover:hover)]:hidden items-center justify-center shadow-md z-30 active:scale-90 cursor-pointer"
+          className="absolute top-2 right-2 w-11 h-11 rounded-full bg-black/75 text-neutral-200 flex [@media(hover:hover)]:hidden items-center justify-center shadow-md z-30 active:scale-90 cursor-pointer"
           title={touchMenuOpen ? 'Close' : 'More actions'}
           aria-label={touchMenuOpen ? 'Close' : 'More actions'}
           aria-expanded={touchMenuOpen}

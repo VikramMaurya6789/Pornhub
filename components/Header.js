@@ -155,7 +155,7 @@ export default function Header() {
       } catch {
         setSuggestions([]);
       }
-    }, 250);
+    }, 150);
 
     return () => clearTimeout(timer);
   }, [q]);
@@ -177,6 +177,28 @@ export default function Header() {
       setSearchFocused(false);
     }
   };
+
+  // Trending searches dropdown (Pornhub-style: shows on focus when query is empty)
+  const trendingDropdown = (positionClass) =>
+    searchFocused && !q.trim() ? (
+      <div className={`drop-in absolute z-50 bg-[#141414] border border-[#2a2a2a] rounded-2xl p-2 shadow-2xl space-y-1 max-h-[50vh] overflow-y-auto ${positionClass}`}>
+        <div className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 py-1 px-3 flex items-center gap-1.5">
+          <IconFlame size={12} className="text-[#ff9900]" />
+          Trending Searches
+        </div>
+        {TRENDING_SUGGESTIONS.map((item) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => goSearch(item)}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-left transition-colors font-medium cursor-pointer text-neutral-200 hover:bg-[#1f1f1f]"
+          >
+            <IconSearch size={14} className="text-neutral-500 shrink-0" />
+            <span className="truncate">{item}</span>
+          </button>
+        ))}
+      </div>
+    ) : null;
 
   return (
     <header ref={headerRef} className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-b border-[#1f1f1f]">
@@ -236,6 +258,7 @@ export default function Header() {
               ))}
             </div>
           )}
+          {trendingDropdown('left-0 right-0 top-12')}
         </div>
 
         {/* Desktop Navigation */}
@@ -391,6 +414,7 @@ export default function Header() {
             ))}
           </div>
         )}
+        {trendingDropdown('left-4 right-4 top-13')}
       </div>
 
       {/* Mobile Drawer Menu */}
