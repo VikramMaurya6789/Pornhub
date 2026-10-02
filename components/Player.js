@@ -169,7 +169,7 @@ export default function Player({
       [
         controlsTimeoutRef, feedbackTimeoutRef, singleTapTimeoutRef,
         touchResetTimeoutRef, swipeHideTimeoutRef, playerToastTimeoutRef,
-        clickDelayTimeoutRef,
+        clickDelayTimeoutRef, seekWatchdogRef,
       ].forEach((r) => {
         try {
           if (r.current) clearTimeout(r.current);
@@ -202,6 +202,7 @@ export default function Player({
   // Stale-frame-on-seek and debounce tracking refs
   const isSeekingRef = useRef(false);
   const seekDebounceTimeoutRef = useRef(null);
+  const seekWatchdogRef = useRef(null); // fires if a seek never completes
   const pendingSeekTargetRef = useRef(null);
   const wasPausedBeforeSeekRef = useRef(false);
   const isMicroNudgingRef = useRef(false);
@@ -1434,29 +1435,19 @@ export default function Player({
 
     const clampedTime = Math.max(0, Math.min(duration, targetTime));
 
-    // Cancel in-flight fragment download from previous seek in hls.js
-    if (hlsRef.current) {
-      try {
-        hlsRef.current.stopLoad();
-      } catch {}
-    }
-
     wasPausedBeforeSeekRef.current = video.paused;
     isUserSeekingRef.current = true;
     lastKnownGoodTimeRef.current = clampedTime;
     savedPositionRef.current = clampedTime;
 
+    // Let hls.js handle the seek natively: it aborts in-flight segment loads
+    // on 'seeking' and fetches the correct segments for the new position.
+    // (Manual stopLoad()/startLoad() around this was observed to wedge the
+    // loader on some devices — the seek would never complete.)
     try {
       video.currentTime = clampedTime;
     } catch (err) {
       console.warn('[Player] Error setting video.currentTime:', err);
-    }
-
-    // Resume loading fragments at targetTime
-    if (hlsRef.current) {
-      try {
-        hlsRef.current.startLoad(clampedTime);
-      } catch {}
     }
   }, [duration]);
 
@@ -1482,6 +1473,21 @@ export default function Player({
       seekDebounceTimeoutRef.current = null;
     }
 
+    // Watchdog: if the seek doesn't complete within 8s (no 'seeked' event),
+    // force the loader to resume instead of spinning forever.
+    if (seekWatchdogRef.current) clearTimeout(seekWatchdogRef.current);
+    seekWatchdogRef.current = setTimeout(() => {
+      seekWatchdogRef.current = null;
+      if (isSeekingRef.current) {
+        console.warn('[Player] Seek watchdog: seek did not complete in 8s, forcing recovery');
+        try {
+          if (hlsRef.current) hlsRef.current.startLoad();
+          else if (videoRef.current) videoRef.current.load();
+        } catch {}
+        handleSeekedOrPlayingRef.current?.();
+      }
+    }, 8000);
+
     if (immediate) {
       pendingSeekTargetRef.current = null;
       applySeek(clampedTime);
@@ -1498,6 +1504,10 @@ export default function Player({
     if (seekingTimeoutRef.current) {
       clearTimeout(seekingTimeoutRef.current);
       seekingTimeoutRef.current = null;
+    }
+    if (seekWatchdogRef.current) {
+      clearTimeout(seekWatchdogRef.current);
+      seekWatchdogRef.current = null;
     }
 
     const video = videoRef.current;
@@ -2586,7 +2596,7 @@ export default function Player({
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="fixed inset-x-3 bottom-28 z-[70] sm:absolute sm:inset-x-auto sm:right-0 sm:bottom-12 sm:z-50 bg-[#141414] border border-[#2a2a2a] rounded-2xl p-1.5 shadow-2xl min-w-[120px] flex flex-col gap-1 backdrop-blur-md pointer-events-auto"
+                  className="fixed inset-x-3 bottom-28 z-50 lg:absolute lg:inset-x-auto lg:right-0 lg:bottom-12 lg:z-50 bg-[#141414] border border-[#2a2a2a] rounded-2xl p-1.5 shadow-2xl min-w-[120px] flex flex-col gap-1 backdrop-blur-md pointer-events-auto"
                 >
                   <div className="px-2.5 py-1 text-[10px] uppercase font-bold text-neutral-500 border-b border-[#222]">
                     Speed
@@ -2633,7 +2643,7 @@ export default function Player({
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="fixed inset-x-3 bottom-28 z-[70] sm:absolute sm:inset-x-auto sm:right-0 sm:bottom-12 sm:z-50 bg-[#141414] border border-[#2a2a2a] rounded-2xl p-1.5 shadow-2xl min-w-[145px] max-h-[62vh] overflow-y-auto flex flex-col gap-1 backdrop-blur-md pointer-events-auto"
+                  className="fixed inset-x-3 bottom-28 z-50 lg:absolute lg:inset-x-auto lg:right-0 lg:bottom-12 lg:z-50 bg-[#141414] border border-[#2a2a2a] rounded-2xl p-1.5 shadow-2xl min-w-[145px] max-h-[62vh] overflow-y-auto flex flex-col gap-1 backdrop-blur-md pointer-events-auto"
                 >
                   {/* Mobile-only: Loop toggle (hidden from control bar on small screens to prevent overflow) */}
                   <button
