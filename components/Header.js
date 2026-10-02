@@ -242,7 +242,7 @@ export default function Header() {
               <Link
                 key={n.href}
                 href={n.href}
-                className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-[#1c1c1c] transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-[#1c1c1c] transition-colors whitespace-nowrap shrink-0"
               >
                 <n.icon size={15} />
                 <span>{n.label}</span>
@@ -255,7 +255,7 @@ export default function Header() {
             <button
               type="button"
               onClick={toggleDataSaver}
-              className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 dataSaver
                   ? 'bg-[#152415] border-green-600/70 text-green-400'
                   : 'bg-[#1c1c1c] border-[#2c2c2c] text-neutral-400 hover:text-white'
