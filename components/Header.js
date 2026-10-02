@@ -6,7 +6,6 @@ import {
   IconSearch, IconHome, IconFlame, IconEye, IconStar, IconGrid,
   IconMenu, IconX, IconHeart, IconClock, IconTag, IconSparkles, IconHistory, IconUser
 } from './Icons';
-import AuthModal from './AuthModal';
 import { fetchMe, getCachedUser, openAuthModal, signOut as authSignOut, subscribeAuth } from '../lib/auth-client';
 
 const NAV = [
@@ -419,7 +418,6 @@ export default function Header() {
           ))}
         </nav>
       )}
-      <AuthModal />
     </header>
   );
 }

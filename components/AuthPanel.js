@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { IconX, IconCheck, IconSpinner, IconUser, IconLock, IconEye, IconEyeOff } from './Icons';
-import { OPEN_AUTH_EVENT, setCachedUser } from '../lib/auth-client';
+import { IconCheck, IconSpinner, IconUser, IconLock, IconEye, IconEyeOff } from './Icons';
+import { setCachedUser } from '../lib/auth-client';
 import { getUserId } from '../lib/uid';
 
 const MailSvg = (p) => (
@@ -70,7 +70,7 @@ function PhoneAuth({ onSuccess }) {
 
   const digits10 = () => phone.replace(/\D/g, '').slice(-10);
 
-  const sendOtp = async (isResend = false) => {
+  const sendOtp = async () => {
     const d = digits10();
     if (d.length !== 10) {
       setError('Enter a valid 10-digit mobile number.');
@@ -89,8 +89,7 @@ function PhoneAuth({ onSuccess }) {
       setConfirmResult(cr);
       setStep('otp');
       setOtp('');
-      if (isResend) setResendIn(30);
-      else setResendIn(30);
+      setResendIn(30);
     } catch (e) {
       setError(mapFirebaseError(e));
       try {
@@ -130,7 +129,7 @@ function PhoneAuth({ onSuccess }) {
         return;
       }
       setCachedUser(j.user);
-      onSuccess();
+      onSuccess(j.user);
     } catch {
       setError('Incorrect OTP. Check and try again.');
     } finally {
@@ -139,7 +138,7 @@ function PhoneAuth({ onSuccess }) {
   };
 
   return (
-    <div className="px-6 py-5 space-y-4">
+    <div className="space-y-4">
       <div id="oh-recaptcha" />
       {step === 'phone' ? (
         <>
@@ -164,7 +163,7 @@ function PhoneAuth({ onSuccess }) {
           )}
           <button
             type="button"
-            onClick={() => sendOtp(false)}
+            onClick={sendOtp}
             disabled={loading}
             className="w-full min-h-[52px] rounded-2xl bg-[#ff9900] hover:bg-[#ffa826] disabled:opacity-60 text-black font-black text-sm shadow-lg shadow-[#ff9900]/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
           >
@@ -227,7 +226,7 @@ function PhoneAuth({ onSuccess }) {
             {resendIn > 0 ? (
               <>Resend OTP in {resendIn}s</>
             ) : (
-              <button type="button" onClick={() => sendOtp(true)} disabled={loading} className="text-[#ff9900] font-bold hover:underline cursor-pointer">
+              <button type="button" onClick={sendOtp} disabled={loading} className="text-[#ff9900] font-bold hover:underline cursor-pointer">
                 Resend OTP
               </button>
             )}
@@ -238,11 +237,10 @@ function PhoneAuth({ onSuccess }) {
   );
 }
 
-// ---------- Main modal ----------
-export default function AuthModal() {
-  const [open, setOpen] = useState(false);
+// ---------- Shared auth panel (used by /login page and modal) ----------
+export default function AuthPanel({ initialMode = 'signin', next = '/', onSuccess }) {
   const [tab, setTab] = useState('email'); // 'email' | 'phone'
-  const [mode, setMode] = useState('signin'); // email sub-mode
+  const [mode, setMode] = useState(initialMode === 'register' ? 'register' : 'signin');
   const [providers, setProviders] = useState({ google: false, phone: true, email: true });
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -255,37 +253,24 @@ export default function AuthModal() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    const onOpen = (e) => {
-      setTab('email');
-      setMode(e?.detail?.mode === 'register' ? 'register' : 'signin');
-      setErrors({});
-      setFormError('');
-      setDone(false);
-      setShowPw(false);
-      setOpen(true);
-      fetch('/api/auth/providers')
-        .then((r) => r.json())
-        .then((j) => setProviders({ google: !!j.google, phone: j.phone !== false, email: true }))
-        .catch(() => {});
-    };
-    window.addEventListener(OPEN_AUTH_EVENT, onOpen);
-    return () => window.removeEventListener(OPEN_AUTH_EVENT, onOpen);
+    fetch('/api/auth/providers')
+      .then((r) => r.json())
+      .then((j) => setProviders({ google: !!j.google, phone: j.phone !== false, email: true }))
+      .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (!open) return;
-    document.body.style.overflow = 'hidden';
-    const onKey = (e) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => {
-      document.body.style.overflow = '';
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [open ]);
+  const safeNext = typeof next === 'string' && next.startsWith('/') ? next : '/';
 
-  if (!open) return null;
+  const handleSuccess = (user) => {
+    setDone(true);
+    if (onSuccess) {
+      onSuccess(user);
+    } else {
+      setTimeout(() => {
+        window.location.href = safeNext;
+      }, 900);
+    }
+  };
 
   const switchMode = (m) => {
     setMode(m);
@@ -296,8 +281,7 @@ export default function AuthModal() {
 
   const startGoogle = () => {
     const guestUid = getUserId() || '';
-    const next = window.location.pathname + window.location.search;
-    window.location.href = `/api/auth/google?guestUid=${encodeURIComponent(guestUid)}&next=${encodeURIComponent(next)}`;
+    window.location.href = `/api/auth/google?guestUid=${encodeURIComponent(guestUid)}&next=${encodeURIComponent(safeNext)}`;
   };
 
   const validate = () => {
@@ -333,8 +317,7 @@ export default function AuthModal() {
         return;
       }
       setCachedUser(j.user);
-      setDone(true);
-      setTimeout(() => setOpen(false), 900);
+      handleSuccess(j.user);
     } catch {
       setFormError('Network error. Check your connection and try again.');
     } finally {
@@ -343,224 +326,207 @@ export default function AuthModal() {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm fade-in overflow-y-auto"
-      onClick={() => !loading && setOpen(false)}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Sign in or create account"
-    >
-      <div
-        className="w-full max-w-sm bg-[#141414] border border-[#2a2a2a] rounded-3xl shadow-2xl overflow-hidden my-8"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="relative px-6 pt-6 pb-4 text-center">
-          <button
-            type="button"
-            onClick={() => !loading && setOpen(false)}
-            aria-label="Close"
-            className="absolute top-3 right-3 w-11 h-11 flex items-center justify-center rounded-xl text-neutral-500 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-          >
-            <IconX size={18} />
-          </button>
-          <div className="mx-auto w-12 h-12 rounded-2xl bg-[#ff9900] flex items-center justify-center shadow-lg shadow-[#ff9900]/30 mb-3">
-            <svg viewBox="0 0 24 24" className="w-6 h-6 fill-black">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-black text-white">
-            {done ? 'Welcome!' : mode === 'register' && tab === 'email' ? 'Create account' : 'Welcome back'}
-          </h2>
-          <p className="text-xs text-neutral-500 mt-1">
-            {done ? 'You are signed in.' : 'Save favorites, history and playlists to your account.'}
-          </p>
+    <div>
+      {/* Header */}
+      <div className="text-center px-6 pt-6 pb-4">
+        <div className="mx-auto w-12 h-12 rounded-2xl bg-[#ff9900] flex items-center justify-center shadow-lg shadow-[#ff9900]/30 mb-3">
+          <svg viewBox="0 0 24 24" className="w-6 h-6 fill-black">
+            <path d="M8 5v14l11-7z" />
+          </svg>
         </div>
+        <h2 className="text-xl font-black text-white">
+          {done ? 'Welcome!' : mode === 'register' && tab === 'email' ? 'Create account' : 'Welcome back'}
+        </h2>
+        <p className="text-xs text-neutral-500 mt-1">
+          {done ? 'You are signed in.' : 'Save favorites, history and playlists to your account.'}
+        </p>
+      </div>
 
-        {done ? (
-          <div className="px-6 pb-8 pt-2 flex flex-col items-center gap-3">
-            <span className="w-14 h-14 rounded-full bg-green-500/15 border border-green-500/40 flex items-center justify-center">
-              <IconCheck size={26} className="text-green-400 stroke-[3]" />
-            </span>
-          </div>
-        ) : (
-          <>
-            {/* Google button */}
-            {providers.google && (
-              <div className="px-6 pb-4">
-                <button
-                  type="button"
-                  onClick={startGoogle}
-                  className="w-full min-h-[52px] rounded-2xl bg-white hover:bg-neutral-100 text-black font-bold text-sm transition-all flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98] shadow"
-                >
-                  <GoogleSvg />
-                  Continue with Google
-                </button>
-                <div className="flex items-center gap-3 mt-4">
-                  <span className="flex-1 h-px bg-[#222]" />
-                  <span className="text-[11px] font-bold text-neutral-600 uppercase tracking-wider">or</span>
-                  <span className="flex-1 h-px bg-[#222]" />
-                </div>
-              </div>
-            )}
-
-            {/* Main tabs: Email / Phone */}
-            <div className="px-6">
-              <div className="grid grid-cols-2 gap-1 p-1 bg-[#0e0e0e] rounded-2xl border border-[#222]">
-                <button
-                  type="button"
-                  onClick={() => setTab('email')}
-                  className={`min-h-[44px] rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                    tab === 'email' ? 'bg-[#ff9900] text-black shadow' : 'text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  <MailSvg size={15} /> Email
-                </button>
-                {providers.phone && (
-                  <button
-                    type="button"
-                    onClick={() => setTab('phone')}
-                    className={`min-h-[44px] rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                      tab === 'phone' ? 'bg-[#ff9900] text-black shadow' : 'text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <PhoneSvg size={15} /> Phone
-                  </button>
-                )}
+      {done ? (
+        <div className="px-6 pb-8 pt-2 flex flex-col items-center gap-3">
+          <span className="w-14 h-14 rounded-full bg-green-500/15 border border-green-500/40 flex items-center justify-center">
+            <IconCheck size={26} className="text-green-400 stroke-[3]" />
+          </span>
+        </div>
+      ) : (
+        <>
+          {/* Google button */}
+          {providers.google && (
+            <div className="px-6 pb-4">
+              <button
+                type="button"
+                onClick={startGoogle}
+                className="w-full min-h-[52px] rounded-2xl bg-white hover:bg-neutral-100 text-black font-bold text-sm transition-all flex items-center justify-center gap-3 cursor-pointer active:scale-[0.98] shadow"
+              >
+                <GoogleSvg />
+                Continue with Google
+              </button>
+              <div className="flex items-center gap-3 mt-4">
+                <span className="flex-1 h-px bg-[#222]" />
+                <span className="text-[11px] font-bold text-neutral-600 uppercase tracking-wider">or</span>
+                <span className="flex-1 h-px bg-[#222]" />
               </div>
             </div>
+          )}
 
-            {tab === 'phone' ? (
-              <PhoneAuth onSuccess={() => { setDone(true); setTimeout(() => setOpen(false), 900); }} />
-            ) : (
-              <>
-                {/* Email sub-tabs */}
-                <div className="px-6 pt-4">
-                  <div className="flex gap-4 justify-center">
-                    {[
-                      { id: 'signin', label: 'Sign In' },
-                      { id: 'register', label: 'Register' },
-                    ].map((t) => (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => switchMode(t.id)}
-                        className={`pb-1.5 text-sm font-bold transition-colors cursor-pointer border-b-2 ${
-                          mode === t.id
-                            ? 'text-[#ff9900] border-[#ff9900]'
-                            : 'text-neutral-500 border-transparent hover:text-white'
-                        }`}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
+          {/* Main tabs: Email / Phone */}
+          <div className="px-6">
+            <div className="grid grid-cols-2 gap-1 p-1 bg-[#0e0e0e] rounded-2xl border border-[#222]">
+              <button
+                type="button"
+                onClick={() => setTab('email')}
+                className={`min-h-[44px] rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  tab === 'email' ? 'bg-[#ff9900] text-black shadow' : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                <MailSvg size={15} /> Email
+              </button>
+              {providers.phone && (
+                <button
+                  type="button"
+                  onClick={() => setTab('phone')}
+                  className={`min-h-[44px] rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    tab === 'phone' ? 'bg-[#ff9900] text-black shadow' : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  <PhoneSvg size={15} /> Phone
+                </button>
+              )}
+            </div>
+          </div>
+
+          {tab === 'phone' ? (
+            <div className="px-6 py-5">
+              <PhoneAuth onSuccess={handleSuccess} />
+            </div>
+          ) : (
+            <>
+              {/* Email sub-tabs */}
+              <div className="px-6 pt-4">
+                <div className="flex gap-4 justify-center">
+                  {[
+                    { id: 'signin', label: 'Sign In' },
+                    { id: 'register', label: 'Register' },
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => switchMode(t.id)}
+                      className={`pb-1.5 text-sm font-bold transition-colors cursor-pointer border-b-2 ${
+                        mode === t.id
+                          ? 'text-[#ff9900] border-[#ff9900]'
+                          : 'text-neutral-500 border-transparent hover:text-white'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
                 </div>
+              </div>
 
-                <form onSubmit={submit} className="px-6 py-5 space-y-4" noValidate>
-                  {mode === 'register' && (
-                    <Field label="Name (optional)" icon={<IconUser size={16} />} error={errors.name}>
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="What should we call you?"
-                        autoComplete="name"
-                        className={inputCls}
-                      />
-                    </Field>
-                  )}
-
-                  <Field label="Email" icon={<MailSvg size={16} />} error={errors.email}>
+              <form onSubmit={submit} className="px-6 py-5 space-y-4" noValidate>
+                {mode === 'register' && (
+                  <Field label="Name (optional)" icon={<IconUser size={16} />} error={errors.name}>
                     <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      autoComplete="email"
-                      inputMode="email"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="What should we call you?"
+                      autoComplete="name"
                       className={inputCls}
                     />
                   </Field>
+                )}
 
-                  <Field label="Password" icon={<IconLock size={16} />} error={errors.password}>
+                <Field label="Email" icon={<MailSvg size={16} />} error={errors.email}>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    inputMode="email"
+                    className={inputCls}
+                  />
+                </Field>
+
+                <Field label="Password" icon={<IconLock size={16} />} error={errors.password}>
+                  <input
+                    type={showPw ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={mode === 'register' ? 'At least 8 characters' : 'Your password'}
+                    autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+                    className={`${inputCls} pr-12`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw((s) => !s)}
+                    aria-label={showPw ? 'Hide password' : 'Show password'}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-lg text-neutral-500 hover:text-white transition-colors cursor-pointer"
+                  >
+                    {showPw ? <IconEyeOff size={17} /> : <IconEye size={17} />}
+                  </button>
+                </Field>
+
+                {mode === 'register' && (
+                  <Field label="Confirm password" icon={<IconLock size={16} />} error={errors.confirm}>
                     <input
                       type={showPw ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder={mode === 'register' ? 'At least 8 characters' : 'Your password'}
-                      autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-                      className={`${inputCls} pr-12`}
+                      value={confirm}
+                      onChange={(e) => setConfirm(e.target.value)}
+                      placeholder="Repeat your password"
+                      autoComplete="new-password"
+                      className={inputCls}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPw((s) => !s)}
-                      aria-label={showPw ? 'Hide password' : 'Show password'}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-lg text-neutral-500 hover:text-white transition-colors cursor-pointer"
-                    >
-                      {showPw ? <IconEyeOff size={17} /> : <IconEye size={17} />}
-                    </button>
                   </Field>
+                )}
 
-                  {mode === 'register' && (
-                    <Field label="Confirm password" icon={<IconLock size={16} />} error={errors.confirm}>
-                      <input
-                        type={showPw ? 'text' : 'password'}
-                        value={confirm}
-                        onChange={(e) => setConfirm(e.target.value)}
-                        placeholder="Repeat your password"
-                        autoComplete="new-password"
-                        className={inputCls}
-                      />
-                    </Field>
-                  )}
-
-                  {formError && (
-                    <p className="text-xs font-semibold text-red-300 bg-red-950/50 border border-red-900/60 rounded-xl px-3.5 py-2.5">
-                      {formError}
-                    </p>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full min-h-[52px] rounded-2xl bg-[#ff9900] hover:bg-[#ffa826] disabled:opacity-60 text-black font-black text-sm shadow-lg shadow-[#ff9900]/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
-                  >
-                    {loading ? (
-                      <>
-                        <IconSpinner size={18} />
-                        {mode === 'register' ? 'Creating account...' : 'Signing in...'}
-                      </>
-                    ) : mode === 'register' ? (
-                      'Create Account'
-                    ) : (
-                      'Sign In'
-                    )}
-                  </button>
-
-                  <p className="text-center text-xs text-neutral-500">
-                    {mode === 'register' ? (
-                      <>
-                        Already have an account?{' '}
-                        <button type="button" onClick={() => switchMode('signin')} className="text-[#ff9900] font-bold hover:underline cursor-pointer">
-                          Sign in
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        New here?{' '}
-                        <button type="button" onClick={() => switchMode('register')} className="text-[#ff9900] font-bold hover:underline cursor-pointer">
-                          Create an account
-                        </button>
-                      </>
-                    )}
+                {formError && (
+                  <p className="text-xs font-semibold text-red-300 bg-red-950/50 border border-red-900/60 rounded-xl px-3.5 py-2.5">
+                    {formError}
                   </p>
-                </form>
-              </>
-            )}
-          </>
-        )}
-      </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full min-h-[52px] rounded-2xl bg-[#ff9900] hover:bg-[#ffa826] disabled:opacity-60 text-black font-black text-sm shadow-lg shadow-[#ff9900]/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                >
+                  {loading ? (
+                    <>
+                      <IconSpinner size={18} />
+                      {mode === 'register' ? 'Creating account...' : 'Signing in...'}
+                    </>
+                  ) : mode === 'register' ? (
+                    'Create Account'
+                  ) : (
+                    'Sign In'
+                  )}
+                </button>
+
+                <p className="text-center text-xs text-neutral-500">
+                  {mode === 'register' ? (
+                    <>
+                      Already have an account?{' '}
+                      <button type="button" onClick={() => switchMode('signin')} className="text-[#ff9900] font-bold hover:underline cursor-pointer">
+                        Sign in
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      New here?{' '}
+                      <button type="button" onClick={() => switchMode('register')} className="text-[#ff9900] font-bold hover:underline cursor-pointer">
+                        Create an account
+                      </button>
+                    </>
+                  )}
+                </p>
+              </form>
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 }
