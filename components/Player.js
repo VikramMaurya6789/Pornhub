@@ -2274,6 +2274,21 @@ export default function Player({
           }
         }}
         onEnded={() => {
+          // Guard against false 'ended' events (e.g. after a seek, the media
+          // element can fire 'ended' even when currentTime is far from the
+          // real duration) — only treat it as ended near the actual end.
+          const video = videoRef.current;
+          const dur = video?.duration;
+          const cur = video?.currentTime ?? 0;
+          if (dur && isFinite(dur) && cur < dur - 2) {
+            console.warn(`[Player] Ignoring false 'ended' event at ${cur.toFixed(1)}s of ${dur.toFixed(1)}s`);
+            // Nudge playback back to life in case the element stalled.
+            try {
+              if (hlsRef.current) hlsRef.current.startLoad();
+              video.play().catch(() => {});
+            } catch {}
+            return;
+          }
           setIsPlaying(false);
           setIsBuffering(false);
           if (onEnded) onEnded();
