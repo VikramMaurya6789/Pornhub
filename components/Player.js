@@ -313,7 +313,10 @@ export default function Player({
   const qualities = useMemo(() => (internalStreams || []).map((s) => s.quality), [internalStreams]);
 
   // Compute smart Auto initial quality level
-  // Initial pick = 720p on desktop, 480p when saveData is true OR effectiveType is '2g'/'3g'/'slow-2g' OR player width < 640px
+  // Start at the HIGHEST available quality (e.g. 1080p). The rebuffering
+  // stall monitor steps down automatically if the network can't keep up,
+  // and steps back up when the buffer is healthy. Only truly slow
+  // connections (2g/3g/slow-2g or data-saver) start low.
   const computeInitialAutoIndex = useCallback((streamList) => {
     if (!streamList || !streamList.length) return 0;
 
@@ -325,32 +328,14 @@ export default function Player({
       }
     }
 
-    const container = containerRef.current;
-    const renderedWidth = container
-      ? container.getBoundingClientRect().width
-      : (typeof window !== 'undefined' ? window.innerWidth : 1024);
+    if (!isSlow) return 0; // highest available quality first
 
-    if (renderedWidth > 0 && renderedWidth < 640) {
-      isSlow = true;
-    }
-
-    const targetHeight = isSlow ? 480 : 720;
-
-    // Streams are ordered high to low (e.g. 1080, 720, 480, 240)
-    let chosenIdx = -1;
+    // Slow network: start at 480p (or lowest available)
     for (let i = 0; i < streamList.length; i++) {
       const qNum = parseInt(streamList[i].quality, 10);
-      if (!isNaN(qNum) && qNum <= targetHeight) {
-        chosenIdx = i;
-        break;
-      }
+      if (!isNaN(qNum) && qNum <= 480) return i;
     }
-
-    if (chosenIdx === -1) {
-      chosenIdx = streamList.length - 1; // lowest available
-    }
-
-    return chosenIdx;
+    return streamList.length - 1;
   }, []);
 
   // Initialize ONLY when vkey changes (never reset while same vkey is open)
