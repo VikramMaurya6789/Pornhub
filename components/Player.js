@@ -1658,9 +1658,6 @@ export default function Player({
       const activeEl = document.activeElement;
       const tag = activeEl?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
-      // Don't double-fire when a button/link has focus — the native click
-      // already handles Space/Enter on it (otherwise play/pause toggles twice).
-      if (tag === 'button' || activeEl?.closest?.('button, a, [role="button"]')) return;
 
       // Only hijack keys when the user is interacting with the player —
       // otherwise arrows/space would break page scrolling in comments etc.
@@ -1670,10 +1667,17 @@ export default function Player({
       const inPlayerFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
       if (!playerHoverRef.current && !playerFocused && !inPlayerFullscreen) return;
 
+      // A focused button natively handles Space (click) — skip only our own
+      // Space toggle then, otherwise play/pause would fire twice. Every other
+      // key (F, Escape, arrows, M…) must still work with button focus.
+      const key = e.key.toLowerCase();
+      const btnFocused = tag === 'button' || activeEl?.closest?.('button, a, [role="button"]');
+      if (key === ' ' && btnFocused) return;
+
       const video = videoRef.current;
       if (!video) return;
 
-      switch (e.key.toLowerCase()) {
+      switch (key) {
         case ' ':
         case 'k':
           e.preventDefault();
