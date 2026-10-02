@@ -4,7 +4,7 @@ import Hls from 'hls.js';
 import {
   IconPlay, IconPause, IconVolume, IconVolumeLow, IconVolumeMute,
   IconFullscreen, IconFullscreenExit, IconPip, IconTheater, IconCast,
-  IconSpeed, IconSettings, IconAlert, IconSparkles,
+  IconSpeed, IconSettings, IconAlert,
   IconSpinner, IconX, IconCheck, IconMoon, IconSun, IconArrowUp,
   IconRefresh, IconList, IconPlayNext
 } from './Icons';
@@ -123,86 +123,6 @@ export default function Player({
     } catch {}
     if (onToggleAutoplay) onToggleAutoplay(nextVal);
   };
-
-  // Ambient light (video glow) — default ON, persisted in localStorage
-  const [ambientEnabled, setAmbientEnabled] = useState(() => {
-    try {
-      const stored = localStorage.getItem('oh_ambient');
-      if (stored !== null) return stored === '1';
-    } catch {}
-    return true;
-  });
-  const [ambientColor, setAmbientColor] = useState('rgb(255, 153, 0)');
-  const ambientCanvasRef = useRef(null);
-  const ambientGlowRef = useRef(null);
-  const ambientTaintedRef = useRef(false);
-
-  const toggleAmbient = () => {
-    const nextVal = !ambientEnabled;
-    setAmbientEnabled(nextVal);
-    try {
-      localStorage.setItem('oh_ambient', nextVal ? '1' : '0');
-    } catch {}
-  };
-
-  // Ambient light sampler: draws the video to a tiny offscreen canvas every
-  // animation frame (up to 60fps) and paints the average color onto the glow
-  // div via ref (no re-render). At 64x36 the per-frame cost is negligible.
-  // Cross-origin streams taint the canvas — getImageData then throws, in which
-  // case sampling stops and the static brand-orange glow remains. Playback is
-  // never touched (no crossOrigin attribute is set on the video element).
-  useEffect(() => {
-    if (!ambientEnabled || ambientTaintedRef.current) return;
-    const video = videoRef.current;
-    const canvas = ambientCanvasRef.current;
-    if (!video || !canvas) return;
-    let ctx = null;
-    try {
-      ctx = canvas.getContext('2d', { willReadFrequently: true });
-    } catch {
-      return;
-    }
-    if (!ctx) return;
-    const reducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let raf = 0;
-    let stopped = false;
-    const sample = () => {
-      if (stopped) return;
-      raf = requestAnimationFrame(sample);
-      if (video.paused || video.ended || video.readyState < 2) return;
-      if (typeof document !== 'undefined' && document.hidden) return;
-      try {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-        let r = 0, g = 0, b = 0, n = 0;
-        for (let i = 0; i < d.length; i += 32) {
-          r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
-        }
-        if (n > 0 && ambientGlowRef.current) {
-          ambientGlowRef.current.style.backgroundColor =
-            `rgb(${Math.round(r / n)}, ${Math.round(g / n)}, ${Math.round(b / n)})`;
-        }
-      } catch (e) {
-        // Tainted canvas (cross-origin video) — stop sampling, keep static glow
-        ambientTaintedRef.current = true;
-        stopped = true;
-        cancelAnimationFrame(raf);
-        return;
-      }
-      if (reducedMotion) {
-        stopped = true;
-        cancelAnimationFrame(raf);
-      }
-    };
-    raf = requestAnimationFrame(sample);
-    return () => {
-      stopped = true;
-      cancelAnimationFrame(raf);
-    };
-  }, [ambientEnabled]);
 
   const [bufferedEnd, setBufferedEnd] = useState(0);
 
@@ -368,7 +288,6 @@ export default function Player({
       healthyBufferSecondsRef.current = 0;
       tokenRefreshAttemptedRef.current = false;
       failedQualitiesRef.current.clear();
-      ambientTaintedRef.current = false; // allow ambient sampling again for the new video
       setHasError(false);
     }
   }, [vkey, initialTime]);
@@ -1020,6 +939,10 @@ export default function Player({
 
       // Rebuffering / stall detection via FRAG_BUFFERED
       hls.on(Hls.Events.FRAG_BUFFERED, () => {
+        // Never step down while the user is seeking — low buffer right after
+        // a seek is expected, not a network stall (switching quality here
+        // forces a full reload and makes every skip painfully slow).
+        if (isUserSeekingRef.current || isSeekingRef.current) return;
         if (quality === 'auto' && videoRef.current) {
           const vid = videoRef.current;
           let bufferAhead = 0;
@@ -1183,7 +1106,7 @@ export default function Player({
         if (!showSettingsMenu && !showSpeedMenu && !showShortcuts) {
           setShowControls(false);
         }
-      }, 3000);
+      }, 5000);
     }
   }, [isPlaying, showSettingsMenu, showSpeedMenu, showShortcuts]);
 
@@ -1346,8 +1269,7 @@ export default function Player({
     } catch {}
   };
 
-  // Screen brightness for swipe gesture (CSS filter on the video element only;
-  // does not affect the ambient-light sampler which reads raw frames).
+  // Screen brightness for swipe gesture (CSS filter on the video element only).
   const applyBrightness = (val) => {
     const clamped = Math.max(0.4, Math.min(1.4, val));
     brightnessRef.current = clamped;
@@ -2192,26 +2114,6 @@ export default function Player({
 
   return (
     <div className="relative">
-      {/* Ambient light glow — sits behind the player, follows video colors */}
-      <div
-        ref={ambientGlowRef}
-        aria-hidden="true"
-        className={`pointer-events-none absolute -inset-3 sm:-inset-6 rounded-[2rem] blur-3xl saturate-[1.8] brightness-[1.15] ${
-          ambientEnabled
-            ? theaterMode || isFullscreen
-              ? 'opacity-20'
-              : 'opacity-40'
-            : 'opacity-0'
-        }`}
-        style={{
-          backgroundColor: ambientColor,
-          // Color tracks the video every frame: short transition keeps it
-          // responsive at 60fps; opacity keeps a slow fade for toggle/theater.
-          transition: 'background-color 120ms linear, opacity 1s ease',
-        }}
-      />
-      {/* Offscreen sampler canvas for ambient light (never visible) */}
-      <canvas ref={ambientCanvasRef} width={64} height={36} className="hidden" aria-hidden="true" />
       <div
       ref={containerRef}
       tabIndex={0}
@@ -2549,7 +2451,10 @@ export default function Player({
         </div>
 
         {/* Controls Row */}
-        <div className="control-bar flex items-center justify-between gap-1 sm:gap-2 text-white text-sm select-none pointer-events-auto">
+        <div
+          className="control-bar flex items-center justify-between gap-1 sm:gap-2 text-white text-sm select-none pointer-events-auto"
+          onPointerDownCapture={resetControlsTimeout}
+        >
           <div className="flex items-center gap-1 sm:gap-3 shrink-0">
             {/* Play / Pause Button */}
             <button
@@ -2681,7 +2586,7 @@ export default function Player({
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="absolute right-0 bottom-12 z-50 bg-[#141414] border border-[#2a2a2a] rounded-2xl p-1.5 shadow-2xl min-w-[120px] flex flex-col gap-1 backdrop-blur-md pointer-events-auto"
+                  className="fixed inset-x-3 bottom-28 z-[70] sm:absolute sm:inset-x-auto sm:right-0 sm:bottom-12 sm:z-50 bg-[#141414] border border-[#2a2a2a] rounded-2xl p-1.5 shadow-2xl min-w-[120px] flex flex-col gap-1 backdrop-blur-md pointer-events-auto"
                 >
                   <div className="px-2.5 py-1 text-[10px] uppercase font-bold text-neutral-500 border-b border-[#222]">
                     Speed
@@ -2728,7 +2633,7 @@ export default function Player({
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="absolute right-0 bottom-12 z-50 bg-[#141414] border border-[#2a2a2a] rounded-2xl p-1.5 shadow-2xl min-w-[145px] max-h-[62vh] overflow-y-auto flex flex-col gap-1 backdrop-blur-md pointer-events-auto"
+                  className="fixed inset-x-3 bottom-28 z-[70] sm:absolute sm:inset-x-auto sm:right-0 sm:bottom-12 sm:z-50 bg-[#141414] border border-[#2a2a2a] rounded-2xl p-1.5 shadow-2xl min-w-[145px] max-h-[62vh] overflow-y-auto flex flex-col gap-1 backdrop-blur-md pointer-events-auto"
                 >
                   {/* Mobile-only: Loop toggle (hidden from control bar on small screens to prevent overflow) */}
                   <button
@@ -2803,28 +2708,6 @@ export default function Player({
                       <span
                         className={`block w-5 h-5 rounded-full bg-white shadow transition-transform ${
                           isAutoplay ? 'translate-x-5' : 'translate-x-0.5'
-                        }`}
-                      />
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={toggleAmbient}
-                    aria-label="Toggle Ambient Light"
-                    className="w-full flex items-center justify-between min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white hover:bg-[#222] transition-colors cursor-pointer touch-manipulation"
-                  >
-                    <span className="flex items-center gap-2">
-                      <IconSparkles size={14} className="text-[#ff9900]" /> Ambient Light
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className={`w-11 h-6 rounded-full transition-colors relative shrink-0 flex items-center ${
-                        ambientEnabled ? 'bg-[#ff9900]' : 'bg-[#333]'
-                      }`}
-                    >
-                      <span
-                        className={`block w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                          ambientEnabled ? 'translate-x-5' : 'translate-x-0.5'
                         }`}
                       />
                     </span>
