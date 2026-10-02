@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import VideoCard, { VideoGridSkeleton } from '../components/VideoCard';
 import { SectionHeader } from '../components/UI';
@@ -10,7 +10,6 @@ import {
   IconChevronR,
   IconStar,
   IconInfinity,
-  IconRefresh,
   IconHistory,
   IconX,
   IconSearch,
@@ -21,8 +20,8 @@ import BackToTop from '../components/BackToTop';
 import { getUserId } from '../lib/uid';
 import { hasRejectedFunctional } from '../lib/consent';
 
-async function getFeed(type, page = 1, mix = 0) {
-  const r = await fetch(`/api/feed?type=${type}&page=${page}&mix=${mix}`);
+async function getFeed(type, page = 1) {
+  const r = await fetch(`/api/feed?type=${type}&page=${page}`);
   if (!r.ok) throw new Error('feed failed');
   return r.json();
 }
@@ -48,15 +47,6 @@ export default function HomePage() {
   const [history, setHistory] = useState([]);
   const [subsRail, setSubsRail] = useState([]);
   const [trendingSearches, setTrendingSearches] = useState([]);
-  const [mixIndex, setMixIndex] = useState(0);
-
-  const refreshMix = useCallback(() => {
-    setHome(null);
-    setHottest(null);
-    setViewed(null);
-    setTopRated(null);
-    setMixIndex((m) => m + 1);
-  }, []);
 
   // Automatic background video sync (throttled to once every 15 minutes)
   useEffect(() => {
@@ -74,7 +64,7 @@ export default function HomePage() {
   useEffect(() => {
     let active = true;
 
-    getFeed('home', 1, mixIndex)
+    getFeed('home', 1)
       .then((data) => {
         if (active) setHome(data.videos || []);
       })
@@ -82,19 +72,19 @@ export default function HomePage() {
         if (active) setErr(e.message);
       });
 
-    getFeed('hottest', 1, mixIndex)
+    getFeed('hottest', 1)
       .then((data) => {
         if (active) setHottest(data.videos || []);
       })
       .catch(() => {});
 
-    getFeed('most_viewed', 1, mixIndex)
+    getFeed('most_viewed', 1)
       .then((data) => {
         if (active) setViewed(data.videos || []);
       })
       .catch(() => {});
 
-    getFeed('top_rated', 1, mixIndex)
+    getFeed('top_rated', 1)
       .then((data) => {
         if (active) setTopRated(data.videos || []);
       })
@@ -103,7 +93,7 @@ export default function HomePage() {
     return () => {
       active = false;
     };
-  }, [mixIndex]);
+  }, []);
 
   useEffect(() => {
     fetch('/api/trending-searches')
@@ -477,20 +467,9 @@ export default function HomePage() {
                   <span className="text-[#ff9900]"><IconSparkles size={24} /></span>
                   <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
                     <span>Today&apos;s Fresh Releases</span>
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#ff9900]/20 text-[#ff9900] border border-[#ff9900]/40 uppercase tracking-wide">
-                      Daily New
-                    </span>
                   </h2>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={refreshMix}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-[#ff9900]/15 text-neutral-300 hover:text-[#ff9900] text-xs font-semibold border border-white/10 hover:border-[#ff9900]/30 transition-all active:scale-95"
-                    title="Shuffle for more fresh daily videos"
-                  >
-                    <IconRefresh size={14} className={!home ? "animate-spin" : ""} />
-                    <span>Shuffle Daily Mix</span>
-                  </button>
                   <Link href="/list/newest" className="text-sm font-semibold text-[#ff9900] hover:text-[#ffb340] flex items-center gap-1 transition-colors">
                     View all <IconChevronR size={16} />
                   </Link>
