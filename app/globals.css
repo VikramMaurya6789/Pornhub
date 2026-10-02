@@ -13,6 +13,18 @@ html, body {
   background: #000;
   color: #e8e8e8;
   scroll-behavior: smooth;
+  /* Phone fix: never allow sideways scroll from overflowing children */
+  overflow-x: clip;
+}
+
+/* Phone fix: remove the gray tap flash on Android Chrome */
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Phone fix: safe-area helpers for notched phones / gesture bars */
+.pb-safe {
+  padding-bottom: max(0.875rem, env(safe-area-inset-bottom));
 }
 
 /* Age gate: hide when html has .oh-age-verified */

@@ -8,6 +8,7 @@ export default function LibraryNav() {
 
   const TABS = [
     { href: '/favorites', label: 'Favorites', icon: IconHeart },
+    { href: '/watchlater', label: 'Watch Later', icon: IconClock },
     { href: '/liked', label: 'Liked Videos', icon: IconHeart },
     { href: '/history', label: 'Watch History', icon: IconClock },
     { href: '/subscriptions', label: 'My Subscriptions', icon: IconStar },

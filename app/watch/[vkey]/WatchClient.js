@@ -14,6 +14,13 @@ import {
   IconWhatsApp, IconTelegram, IconQr
 } from '../../../components/Icons';
 import { generateQrSvg } from '../../../lib/qr';
+import { getQueue, addToQueue, shiftQueue } from '../../../lib/queue';
+import {
+  isWatchLater,
+  toggleWatchLater as toggleWatchLaterLib,
+  WATCHLATER_CHANGED_EVENT,
+} from '../../../lib/watchlater';
+import { haptic } from '../../../lib/haptics';
 import { formatCount, formatViews, formatMaxViews } from '../../../lib/format';
 
 function WatchContent() {
@@ -383,12 +390,18 @@ function WatchContent() {
   }, []);
 
   // Autoplay countdown timer
+  const [nextUpOverride, setNextUpOverride] = useState(null); // queued video takes precedence
   useEffect(() => {
     if (nextCountdown === null) return;
     if (nextCountdown <= 0) {
-      const nextVkey = v?.related?.[0]?.vkey;
-      if (nextVkey) {
-        router.push(`/watch/${nextVkey}`);
+      const target = nextUpOverride?.vkey || v?.related?.[0]?.vkey;
+      if (target) {
+        if (nextUpOverride) {
+          try {
+            shiftQueue();
+          } catch {}
+        }
+        router.push(`/watch/${target}`);
       }
       return;
     }
@@ -396,7 +409,15 @@ function WatchContent() {
       setNextCountdown((c) => (c !== null ? c - 1 : null));
     }, 1000);
     return () => clearTimeout(t);
-  }, [nextCountdown, v, router]);
+  }, [nextCountdown, v, router, nextUpOverride]);
+
+  // If this video was the head of the Up-Next queue, consume it on load.
+  useEffect(() => {
+    try {
+      const q = getQueue();
+      if (q.length > 0 && q[0].vkey === vkey) shiftQueue();
+    } catch {}
+  }, [vkey]);
 
   // Sync saved status on consent change
   useEffect(() => {
@@ -435,9 +456,24 @@ function WatchContent() {
 
   const handleEnded = () => {
     postHistoryProgress(v?.durationSec || 0, v?.durationSec || 0);
+    // Up-Next queue takes precedence over autoplay's related pick.
+    try {
+      const q = getQueue();
+      if (q.length > 0) {
+        setNextUpOverride({
+          vkey: q[0].vkey,
+          title: q[0].title,
+          thumbnail: q[0].thumbnail,
+          duration: q[0].duration,
+        });
+        setNextCountdown(5);
+        return;
+      }
+    } catch {}
     if (!autoplayNext || !v?.related?.length) return;
     const nextVideo = v.related[0];
     if (nextVideo?.vkey) {
+      setNextUpOverride(null);
       setNextCountdown(5);
     }
   };
@@ -558,6 +594,54 @@ function WatchContent() {
     }
 
     showToast(next ? 'Saved to Favorites!' : 'Removed from Favorites');
+  };
+
+  // Watch Later (one-tap save, local list)
+  const [watchLater, setWatchLater] = useState(false);
+  useEffect(() => {
+    const sync = () => {
+      try {
+        setWatchLater(isWatchLater(vkey));
+      } catch {
+        setWatchLater(false);
+      }
+    };
+    sync();
+    window.addEventListener(WATCHLATER_CHANGED_EVENT, sync);
+    return () => window.removeEventListener(WATCHLATER_CHANGED_EVENT, sync);
+  }, [vkey]);
+
+  const toggleWatchLater = () => {
+    if (!v) return;
+    const next = toggleWatchLaterLib({
+      vkey,
+      title: v.title,
+      thumbnail: v.thumbnail,
+      duration: v.duration,
+      views: v.views,
+      author: v.author,
+    });
+    if (next === null) {
+      openCookiePreferences();
+      return;
+    }
+    setWatchLater(next);
+    haptic();
+    showToast(next ? 'Saved to Watch Later' : 'Removed from Watch Later');
+  };
+
+  const addCurrentToQueue = () => {
+    if (!v) return;
+    const added = addToQueue({
+      vkey,
+      title: v.title,
+      thumbnail: v.thumbnail,
+      duration: v.duration,
+      views: v.views,
+      author: v.author,
+    });
+    haptic();
+    showToast(added ? 'Added to queue — plays next' : 'Already in queue');
   };
 
   const toggleSubscribe = () => {
@@ -742,7 +826,7 @@ function WatchContent() {
     );
   }
 
-  const nextVideo = v?.related?.[0];
+  const nextVideo = nextUpOverride || v?.related?.[0];
 
   const uploaderHref = useMemo(() => {
     if (!v) return '#';
@@ -784,7 +868,7 @@ function WatchContent() {
           {miniPlayerActive && (
             <div className="aspect-video rounded-xl bg-black/40 ring-1 ring-white/10" aria-hidden="true" />
           )}
-          <div className={miniPlayerActive ? 'fixed bottom-4 right-4 z-40 w-[min(340px,80vw)] fade-in' : 'contents'}>
+          <div className={miniPlayerActive ? 'fixed right-4 z-40 w-[min(340px,80vw)] fade-in bottom-[max(1rem,env(safe-area-inset-bottom))]' : 'contents'}>
           {!v ? (
             <div className="aspect-video rounded-xl skeleton" />
           ) : (
@@ -804,6 +888,7 @@ function WatchContent() {
               initialTime={initialTime}
               compact={miniPlayerActive}
               onExpand={() => playerAnchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              onQueuePlay={(vk) => router.push(`/watch/${vk}`)}
             />
           )}
 
@@ -889,6 +974,26 @@ function WatchContent() {
                   >
                     <IconList size={17} />
                     <span>Playlist</span>
+                  </button>
+
+                  {/* Watch Later (one-tap) */}
+                  <button
+                    onClick={toggleWatchLater}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-full ring-1 text-sm font-bold transition-all ${watchLater ? 'bg-[#ff9900]/15 ring-[#ff9900] text-[#ff9900] shadow-md shadow-[#ff9900]/20' : 'bg-[#1c1c1c] ring-[#2c2c2c] text-neutral-200 hover:bg-[#2a2a2a]'}`}
+                    title={watchLater ? 'Remove from Watch Later' : 'Save to Watch Later'}
+                  >
+                    <IconClock size={17} />
+                    <span>{watchLater ? 'Saved' : 'Watch Later'}</span>
+                  </button>
+
+                  {/* Add to Up-Next Queue */}
+                  <button
+                    onClick={addCurrentToQueue}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-full ring-1 ring-[#2c2c2c] bg-[#1c1c1c] text-neutral-200 hover:bg-[#2a2a2a] text-sm font-bold transition-all"
+                    title="Add to up-next queue"
+                  >
+                    <IconPlayNext size={17} />
+                    <span>Queue</span>
                   </button>
 
                   {/* Report Video */}
@@ -1605,6 +1710,30 @@ function WatchContent() {
                         {r.duration !== '0:00' && r.duration !== '0' ? r.duration : '--:--'}
                       </span>
                     )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const added = addToQueue({
+                          vkey: r.vkey,
+                          title: r.title,
+                          thumbnail: r.thumbnail,
+                          duration: r.duration,
+                          views: r.views,
+                          author: r.author,
+                        });
+                        haptic();
+                        showToast(added ? 'Added to queue — plays next' : 'Already in queue');
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      className="absolute top-1.5 right-1.5 w-10 h-10 rounded-full bg-black/75 text-neutral-300 hover:text-[#ff9900] hover:bg-black/90 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-all flex items-center justify-center shadow-md z-10 active:scale-90 cursor-pointer"
+                      title="Add to up-next queue"
+                      aria-label="Add to up-next queue"
+                    >
+                      <IconPlus size={16} />
+                    </button>
                   </div>
                   <div className="min-w-0 py-0.5">
                     <p className="clamp-2 text-[13px] font-medium text-neutral-100 group-hover:text-[#ff9900] transition-colors leading-snug">

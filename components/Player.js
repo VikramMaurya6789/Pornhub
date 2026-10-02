@@ -5,8 +5,11 @@ import {
   IconPlay, IconPause, IconVolume, IconVolumeLow, IconVolumeMute,
   IconFullscreen, IconFullscreenExit, IconPip, IconTheater, IconCast,
   IconSpeed, IconSettings, IconAlert, IconSparkles,
-  IconSpinner, IconX, IconCheck, IconMoon, IconSun, IconArrowUp
+  IconSpinner, IconX, IconCheck, IconMoon, IconSun, IconArrowUp,
+  IconRefresh, IconList
 } from './Icons';
+import { haptic } from '../lib/haptics';
+import { getQueue, removeFromQueue, clearQueue, QUEUE_CHANGED_EVENT } from '../lib/queue';
 
 function parseDurationToSec(d) {
   if (!d) return 0;
@@ -48,6 +51,7 @@ export default function Player({
   initialTime = 0,
   compact = false, // floating mini-player mode: minimal controls
   onExpand, // called when the expand button is tapped in compact mode
+  onQueuePlay, // called with vkey when a queued video is tapped (defaults to location nav)
 }) {
   const [quality, setQuality] = useState('auto');
   const [qualityIndex, setQualityIndex] = useState(0);
@@ -72,6 +76,24 @@ export default function Player({
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
+  const playbackRateRef = useRef(1);
+  useEffect(() => {
+    playbackRateRef.current = playbackRate;
+  }, [playbackRate]);
+  // Loop single video (session-only, like YouTube's loop)
+  const [loop, setLoop] = useState(false);
+  // Up-next queue panel
+  const [queue, setQueue] = useState([]);
+  const [showQueue, setShowQueue] = useState(false);
+  // Double-tap-and-hold 2x speed gesture
+  const [is2xHold, setIs2xHold] = useState(false);
+  const hold2xRef = useRef(null); // { timer } | { active: true }
+  const suppressTapRef = useRef(0); // timestamp — suppresses the tap after a 2x hold
+  const autoFsRef = useRef(false); // true when WE entered fullscreen due to rotation
+  const compactRef = useRef(compact);
+  useEffect(() => {
+    compactRef.current = compact;
+  }, [compact]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -1161,21 +1183,23 @@ export default function Player({
 
   // Close menus when clicking outside cleanly using pointerdown
   useEffect(() => {
-    if (!showSettingsMenu && !showSpeedMenu) return;
+    if (!showSettingsMenu && !showSpeedMenu && !showQueue) return;
     const handleOutsideClick = (e) => {
       if (
         e.target &&
         e.target.closest &&
         !e.target.closest('.settings-menu-container') &&
-        !e.target.closest('.speed-menu-container')
+        !e.target.closest('.speed-menu-container') &&
+        !e.target.closest('.queue-panel-container')
       ) {
         setShowSettingsMenu(false);
         setShowSpeedMenu(false);
+        setShowQueue(false);
       }
     };
     document.addEventListener('pointerdown', handleOutsideClick);
     return () => document.removeEventListener('pointerdown', handleOutsideClick);
-  }, [showSettingsMenu, showSpeedMenu]);
+  }, [showSettingsMenu, showSpeedMenu, showQueue]);
 
   // Buffer stall recovery watchdog (gently nudges forward without destroying HLS instance)
   useEffect(() => {
@@ -1340,6 +1364,82 @@ export default function Player({
       localStorage.setItem('oh_rate', String(rate));
     } catch {}
   };
+
+  // Loop single video toggle — applied straight to the media element so the
+  // native loop takes over (no 'ended' event fires while looping).
+  const toggleLoop = () => {
+    const next = !loop;
+    setLoop(next);
+    haptic();
+    try {
+      if (videoRef.current) videoRef.current.loop = next;
+    } catch {}
+  };
+
+  // Keep the media element's loop flag in sync (e.g. after source swaps).
+  useEffect(() => {
+    try {
+      if (videoRef.current) videoRef.current.loop = loop;
+    } catch {}
+  }, [loop, qualityIndex, streams]);
+
+  // Up-next queue: subscribe to the shared queue store.
+  useEffect(() => {
+    const load = () => {
+      try {
+        setQueue(getQueue());
+      } catch {
+        setQueue([]);
+      }
+    };
+    load();
+    window.addEventListener(QUEUE_CHANGED_EVENT, load);
+    return () => window.removeEventListener(QUEUE_CHANGED_EVENT, load);
+  }, []);
+
+  const playQueueItem = (vkey) => {
+    if (!vkey) return;
+    haptic();
+    setShowQueue(false);
+    if (onQueuePlay) {
+      onQueuePlay(vkey);
+    } else if (typeof window !== 'undefined') {
+      window.location.href = `/watch/${vkey}`;
+    }
+  };
+
+  // Landscape auto-fullscreen (mobile): rotating to landscape while playing
+  // enters fullscreen; rotating back exits it (only if we entered it).
+  useEffect(() => {
+    const mq = window.matchMedia('(orientation: landscape)');
+    const coarse = window.matchMedia('(hover: none) and (pointer: coarse)');
+    const onChange = () => {
+      try {
+        if (!coarse.matches || compactRef.current) return;
+        const video = videoRef.current;
+        if (!video || video.paused) return;
+        if (mq.matches) {
+          const isFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+          if (!isFs) {
+            autoFsRef.current = true;
+            toggleFullscreen();
+          }
+        } else if (autoFsRef.current) {
+          autoFsRef.current = false;
+          if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        }
+      } catch {}
+    };
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else mq.addListener(onChange);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', onChange);
+      else mq.removeListener(onChange);
+    };
+    // toggleFullscreen is stable-in-practice (refs only)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const updateQuality = (q) => {
     setHasError(false);
@@ -1619,6 +1719,7 @@ export default function Player({
           setShowSettingsMenu(false);
           setShowSpeedMenu(false);
           setShowShortcuts(false);
+          setShowQueue(false);
           break;
         default:
           break;
@@ -1645,6 +1746,11 @@ export default function Player({
 
   // Mobile Touch Gestures: Single tap toggles controls, double tap seeks -10s / +10s
   const handleTouchEnd = (e) => {
+    // A 2x hold just ended — don't treat the release as a tap.
+    if (Date.now() - suppressTapRef.current < 500) {
+      suppressTapRef.current = 0;
+      return;
+    }
     // A vertical swipe gesture just ended — don't treat it as a tap.
     if (Date.now() - swipeEndRef.current < 500) {
       swipeEndRef.current = 0;
@@ -1728,6 +1834,24 @@ export default function Player({
         startVol: videoRef.current ? videoRef.current.volume : 1,
         startBright: brightnessRef.current,
       };
+      // Double-tap-and-hold → 2x speed (YouTube style). Only arms when this
+      // touchstart lands inside the double-tap window of the previous tap.
+      if (Date.now() - lastTapRef.current.time < 320) {
+        const timer = setTimeout(() => {
+          const s = swipeRef.current;
+          const v = videoRef.current;
+          if (s && !s.active && v && !v.paused) {
+            hold2xRef.current = { active: true };
+            try {
+              v.playbackRate = 2;
+            } catch {}
+            setIs2xHold(true);
+            setSwipeUI({ type: 'speed2x', pct: 200 });
+            haptic(15);
+          }
+        }, 260);
+        hold2xRef.current = { timer };
+      }
     };
 
     const onTM = (e) => {
@@ -1738,9 +1862,16 @@ export default function Player({
       const dx = t.clientX - s.x0;
       const dy = t.clientY - s.y0;
       if (!s.active) {
+        // A 2x hold owns its touch — never let a swipe take over mid-hold.
+        if (hold2xRef.current && hold2xRef.current.active) return;
         // Lock in only on a clear vertical swipe; anything else is not ours.
         if (Math.abs(dy) > 24 && Math.abs(dy) > Math.abs(dx) * 1.4) {
           s.active = true;
+          // A vertical swipe wins over a pending 2x hold — cancel the timer.
+          if (hold2xRef.current && hold2xRef.current.timer) {
+            clearTimeout(hold2xRef.current.timer);
+            hold2xRef.current = null;
+          }
         } else if (Math.abs(dx) > 24 || Math.abs(dy) > 24) {
           swipeRef.current = null;
           return;
@@ -1769,6 +1900,25 @@ export default function Player({
         swipeEndRef.current = Date.now();
         if (swipeHideTimeoutRef.current) clearTimeout(swipeHideTimeoutRef.current);
         swipeHideTimeoutRef.current = setTimeout(() => setSwipeUI(null), 900);
+      }
+      // End a 2x hold: restore the chosen rate and swallow the follow-up tap.
+      const h = hold2xRef.current;
+      if (h) {
+        if (h.timer) clearTimeout(h.timer);
+        if (h.active) {
+          const v = videoRef.current;
+          if (v) {
+            try {
+              v.playbackRate = playbackRateRef.current || 1;
+            } catch {}
+          }
+          setIs2xHold(false);
+          setSwipeUI(null);
+          suppressTapRef.current = Date.now();
+          lastTapRef.current = { time: 0, x: 0 };
+          if (swipeHideTimeoutRef.current) clearTimeout(swipeHideTimeoutRef.current);
+        }
+        hold2xRef.current = null;
       }
       swipeRef.current = null;
     };
@@ -2162,19 +2312,30 @@ export default function Player({
         </div>
       )}
 
-      {/* Swipe Gesture Indicator (volume / brightness) */}
+      {/* Swipe Gesture Indicator (volume / brightness / 2x hold) */}
       {swipeUI && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none fade-in">
           <div className="flex items-center gap-3 bg-black/80 backdrop-blur-md text-white pl-3 pr-4 py-2.5 rounded-2xl ring-1 ring-[#ff9900]/40 shadow-2xl">
-            {swipeUI.type === 'volume'
-              ? <IconVolume size={20} className="text-[#ff9900] shrink-0" />
-              : <IconSun size={20} className="text-[#ff9900] shrink-0" />}
+            {swipeUI.type === 'volume' ? (
+              <IconVolume size={20} className="text-[#ff9900] shrink-0" />
+            ) : swipeUI.type === 'brightness' ? (
+              <IconSun size={20} className="text-[#ff9900] shrink-0" />
+            ) : (
+              <IconSpeed size={20} className="text-[#ff9900] shrink-0" />
+            )}
             <div className="w-28">
               <div className="text-[11px] font-bold mb-1">
-                {swipeUI.type === 'volume' ? 'Volume' : 'Brightness'} <span className="text-[#ff9900]">{swipeUI.pct}%</span>
+                {swipeUI.type === 'speed2x' ? (
+                  <>2x Speed <span className="text-[#ff9900]">ON</span></>
+                ) : (
+                  <>{swipeUI.type === 'volume' ? 'Volume' : 'Brightness'} <span className="text-[#ff9900]">{swipeUI.pct}%</span></>
+                )}
               </div>
               <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-[#ff9900] rounded-full transition-[width] duration-75" style={{ width: `${swipeUI.pct}%` }} />
+                <div
+                  className="h-full bg-[#ff9900] rounded-full transition-[width] duration-75"
+                  style={{ width: `${swipeUI.type === 'speed2x' ? 100 : Math.min(100, swipeUI.pct)}%` }}
+                />
               </div>
             </div>
           </div>
@@ -2241,7 +2402,7 @@ export default function Player({
       <>
       {/* Bottom Floating Control Bar */}
       <div
-        className={`absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/85 to-transparent px-3 sm:px-4 pt-8 pb-3.5 flex flex-col gap-2 transition-all duration-300 z-30 ${
+        className={`absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/85 to-transparent px-3 sm:px-4 pt-8 pb-safe flex flex-col gap-2 transition-all duration-300 z-30 ${
           showControls || !isPlaying || showSettingsMenu || showSpeedMenu
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 translate-y-2 pointer-events-none group-hover/player:opacity-100 group-hover/player:translate-y-0 group-hover/player:pointer-events-auto'
@@ -2298,6 +2459,7 @@ export default function Player({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
+                haptic();
                 togglePlay();
               }}
               onPointerDown={(e) => e.stopPropagation()}
@@ -2319,6 +2481,7 @@ export default function Player({
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
+                  haptic();
                   toggleMute();
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
@@ -2354,6 +2517,50 @@ export default function Player({
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2.5">
+            {/* Loop Single Video Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleLoop();
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              aria-label={loop ? 'Disable loop' : 'Loop this video'}
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 transition-colors cursor-pointer touch-manipulation pointer-events-auto ${
+                loop ? 'text-[#ff9900]' : 'text-white hover:text-[#ff9900]'
+              }`}
+              title={loop ? 'Loop ON — video repeats' : 'Loop this video'}
+            >
+              <IconRefresh size={18} />
+            </button>
+
+            {/* Up-Next Queue Button */}
+            <div className="relative queue-panel-container">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  haptic();
+                  setShowQueue((s) => !s);
+                  setShowSpeedMenu(false);
+                  setShowSettingsMenu(false);
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                aria-label={showQueue ? 'Close queue' : 'Open up-next queue'}
+                className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 transition-colors cursor-pointer touch-manipulation pointer-events-auto ${
+                  showQueue ? 'text-[#ff9900] bg-white/10' : 'text-white hover:text-[#ff9900]'
+                }`}
+                title="Up-next queue"
+              >
+                <IconList size={18} />
+              </button>
+              {queue.length > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[#ff9900] text-black text-[10px] font-black flex items-center justify-center pointer-events-none">
+                  {queue.length > 99 ? '99+' : queue.length}
+                </span>
+              )}
+            </div>
+
             {/* Playback Speed Menu */}
             <div className="relative speed-menu-container z-40 pointer-events-auto">
               <button
@@ -2588,6 +2795,7 @@ export default function Player({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
+                haptic();
                 toggleFullscreen();
               }}
               aria-label={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
@@ -2628,6 +2836,99 @@ export default function Player({
         </div>
       )}
 
+      {/* Up-Next Queue Panel */}
+      {showQueue && (
+        <div
+          className="queue-panel-container absolute right-3 bottom-24 z-50 w-[min(340px,86vw)] max-h-[52%] flex flex-col bg-[#141414]/97 backdrop-blur-md border border-[#2a2a2a] rounded-2xl shadow-2xl overflow-hidden fade-in"
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          data-interactive="true"
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#222] shrink-0">
+            <span className="text-sm font-bold text-white flex items-center gap-2">
+              <IconList size={16} className="text-[#ff9900]" />
+              Up Next
+              {queue.length > 0 && (
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-[#ff9900]/20 text-[#ff9900]">
+                  {queue.length}
+                </span>
+              )}
+            </span>
+            <div className="flex items-center gap-1">
+              {queue.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearQueue();
+                    haptic();
+                  }}
+                  className="min-h-[44px] px-3 text-xs font-bold text-neutral-400 hover:text-red-400 transition-colors cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowQueue(false)}
+                aria-label="Close queue"
+                className="w-11 h-11 flex items-center justify-center rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <IconX size={18} />
+              </button>
+            </div>
+          </div>
+          <div className="overflow-y-auto overscroll-contain">
+            {queue.length === 0 ? (
+              <p className="px-4 py-8 text-center text-xs text-neutral-500 leading-relaxed">
+                Queue is empty.
+                <br />
+                Add videos from any video page to play them back-to-back.
+              </p>
+            ) : (
+              queue.map((q) => (
+                <div
+                  key={q.vkey}
+                  className="flex items-center gap-3 px-3 py-2 hover:bg-[#1c1c1c] transition-colors cursor-pointer group/row"
+                  onClick={() => playQueueItem(q.vkey)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') playQueueItem(q.vkey);
+                  }}
+                >
+                  <div className="relative w-24 shrink-0 aspect-video rounded-lg overflow-hidden bg-black">
+                    {q.thumbnail && (
+                      <img src={q.thumbnail} alt="" loading="lazy" className="w-full h-full object-cover" />
+                    )}
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover/row:opacity-100 transition-opacity">
+                      <IconPlay size={20} className="text-white" />
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="clamp-2 text-xs font-medium text-neutral-100 leading-snug">{q.title}</p>
+                    {q.duration && (
+                      <p className="text-[10px] text-neutral-500 mt-1">{q.duration}</p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFromQueue(q.vkey);
+                      haptic();
+                    }}
+                    aria-label="Remove from queue"
+                    className="w-11 h-11 shrink-0 flex items-center justify-center rounded-lg text-neutral-500 hover:text-red-400 hover:bg-white/5 transition-colors cursor-pointer"
+                  >
+                    <IconX size={16} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Keyboard Shortcuts Modal */}
       {showShortcuts && (
         <div
@@ -2661,6 +2962,18 @@ export default function Player({
               <div className="flex justify-between items-center py-1 border-b border-[#1c1c1c]">
                 <span>Double-tap left / right edge</span>
                 <kbd className="px-2 py-0.5 rounded bg-[#222] font-mono text-[#ff9900]">Seek −10s / +10s</kbd>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-[#1c1c1c]">
+                <span>Double-tap &amp; hold</span>
+                <kbd className="px-2 py-0.5 rounded bg-[#222] font-mono text-[#ff9900]">2x speed</kbd>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-[#1c1c1c]">
+                <span>Rotate phone to landscape</span>
+                <kbd className="px-2 py-0.5 rounded bg-[#222] font-mono text-[#ff9900]">Auto fullscreen</kbd>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-[#1c1c1c]">
+                <span>Loop button (control bar)</span>
+                <kbd className="px-2 py-0.5 rounded bg-[#222] font-mono text-[#ff9900]">Repeat video</kbd>
               </div>
               <div className="flex justify-between items-center py-1 border-b border-[#1c1c1c]">
                 <span>Swipe up / down (left half)</span>

@@ -1,9 +1,11 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { IconEye, IconHeart, IconEyeOff } from './Icons';
+import { IconEye, IconHeart, IconEyeOff, IconClock } from './Icons';
 import { formatCount, parseDurationSec } from '../lib/format';
 import { hasRejectedFunctional, openCookiePreferences } from '../lib/consent';
+import { isWatchLater, toggleWatchLater, WATCHLATER_CHANGED_EVENT } from '../lib/watchlater';
+import { haptic } from '../lib/haptics';
 
 // Cached map of vkey -> watch progress % (from local history). Module-level
 // so dozens of cards share a single localStorage read.
@@ -55,6 +57,16 @@ export default function VideoCard({ v, index = 0 }) {
     }
   });
 
+  const [isWL, setIsWL] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      if (hasRejectedFunctional()) return false;
+      return isWatchLater(v.vkey);
+    } catch {
+      return false;
+    }
+  });
+
   const [thumbSrc, setThumbSrc] = useState(v.thumbnail || null);
   const [imgFailed, setImgFailed] = useState(!v.thumbnail);
   const retriedRef = useRef(false);
@@ -96,15 +108,24 @@ export default function VideoCard({ v, index = 0 }) {
       try {
         if (hasRejectedFunctional()) {
           setIsFav(false);
+          setIsWL(false);
         } else {
           setIsFav(localStorage.getItem(`oh_saved_${v.vkey}`) === '1');
+          setIsWL(isWatchLater(v.vkey));
         }
       } catch {}
     };
     window.addEventListener('oh_consent_changed', handleConsent);
+    const handleWLChanged = () => {
+      try {
+        setIsWL(isWatchLater(v.vkey));
+      } catch {}
+    };
+    window.addEventListener(WATCHLATER_CHANGED_EVENT, handleWLChanged);
     return () => {
       window.removeEventListener('oh_consent_changed', handleConsent);
       window.removeEventListener('oh_datasaver_changed', onDataSaver);
+      window.removeEventListener(WATCHLATER_CHANGED_EVENT, handleWLChanged);
     };
   }, [v.vkey]);
 
@@ -172,6 +193,30 @@ export default function VideoCard({ v, index = 0 }) {
       }
       localStorage.setItem('oh_favorites_list', JSON.stringify(list));
     } catch {}
+  };
+
+  const toggleWL = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.nativeEvent?.stopImmediatePropagation) {
+        e.nativeEvent.stopImmediatePropagation();
+      }
+    }
+    haptic();
+    const next = toggleWatchLater({
+      vkey: v.vkey,
+      title: v.title,
+      thumbnail: v.thumbnail,
+      duration: v.duration,
+      views: v.views,
+      author: v.author,
+    });
+    if (next === null) {
+      openCookiePreferences();
+      return;
+    }
+    setIsWL(next);
   };
 
   const hideVideo = (e) => {
@@ -273,11 +318,28 @@ export default function VideoCard({ v, index = 0 }) {
           onClick={hideVideo}
           onPointerDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
-          className="absolute top-2 right-14 w-11 h-11 rounded-full bg-black/75 text-neutral-300 hover:text-red-400 hover:bg-black/90 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-all flex items-center justify-center shadow-md z-30 hover:scale-110 active:scale-90 cursor-pointer"
+          className="absolute top-2 right-26 w-11 h-11 rounded-full bg-black/75 text-neutral-300 hover:text-red-400 hover:bg-black/90 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-all flex items-center justify-center shadow-md z-30 hover:scale-110 active:scale-90 cursor-pointer"
           title="Not interested / Hide video"
           aria-label="Hide video"
         >
           <IconEyeOff size={18} />
+        </button>
+
+        {/* Watch Later Button */}
+        <button
+          type="button"
+          onClick={toggleWL}
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          className={`absolute top-2 right-14 w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-md z-30 cursor-pointer ${
+            isWL
+              ? 'bg-[#ff9900] text-black opacity-100'
+              : 'bg-black/75 text-neutral-300 hover:text-white opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 hover:scale-110 active:scale-90'
+          }`}
+          title={isWL ? 'Saved to Watch Later' : 'Watch Later'}
+          aria-label={isWL ? 'Remove from Watch Later' : 'Watch Later'}
+        >
+          <IconClock size={18} />
         </button>
 
         {/* Quick Save / Favorite Heart Button with Heart Pop Animation */}

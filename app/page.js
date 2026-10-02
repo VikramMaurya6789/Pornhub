@@ -14,6 +14,7 @@ import {
   IconHistory,
   IconX,
   IconSearch,
+  IconBell,
 } from '../components/Icons';
 import CategorySidebar, { MobileCategoryChips } from '../components/CategorySidebar';
 import BackToTop from '../components/BackToTop';
@@ -45,6 +46,7 @@ export default function HomePage() {
   const [topRated, setTopRated] = useState(null);
   const [err, setErr] = useState(null);
   const [history, setHistory] = useState([]);
+  const [subsRail, setSubsRail] = useState([]);
   const [trendingSearches, setTrendingSearches] = useState([]);
   const [mixIndex, setMixIndex] = useState(0);
 
@@ -151,6 +153,54 @@ export default function HomePage() {
     loadHistory();
     window.addEventListener('oh_consent_changed', loadHistory);
     return () => window.removeEventListener('oh_consent_changed', loadHistory);
+  }, []);
+
+  // New from your subscriptions rail: latest videos from the first 4 followed uploaders
+  useEffect(() => {
+    let active = true;
+    const loadSubsRail = async () => {
+      try {
+        if (hasRejectedFunctional()) {
+          if (active) setSubsRail([]);
+          return;
+        }
+        const raw = localStorage.getItem('oh_subscriptions');
+        const subs = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(subs) || subs.length === 0) {
+          if (active) setSubsRail([]);
+          return;
+        }
+        const results = await Promise.all(
+          subs.slice(0, 4).map((s) =>
+            fetch(`/api/pornstar?slug=${encodeURIComponent(s.slug)}`)
+              .then((r) => (r.ok ? r.json() : null))
+              .catch(() => null)
+          )
+        );
+        if (!active) return;
+        const seen = new Set();
+        const videos = [];
+        for (const data of results) {
+          for (const v of (data?.videos || []).slice(0, 3)) {
+            if (!v || !v.vkey || seen.has(v.vkey)) continue;
+            if (parseDurationSec(v.duration) < 600) continue;
+            seen.add(v.vkey);
+            videos.push(v);
+            if (videos.length >= 12) break;
+          }
+          if (videos.length >= 12) break;
+        }
+        setSubsRail(videos);
+      } catch {
+        if (active) setSubsRail([]);
+      }
+    };
+    loadSubsRail();
+    window.addEventListener('oh_subscriptions_changed', loadSubsRail);
+    return () => {
+      active = false;
+      window.removeEventListener('oh_subscriptions_changed', loadSubsRail);
+    };
   }, []);
 
   // Compute initial sections with strict deduplication and duration >= 10 mins (600s)
@@ -392,6 +442,28 @@ export default function HomePage() {
                     </div>
                   );
                 })}
+              </div>
+            </section>
+          )}
+
+          {/* New from your subscriptions */}
+          {subsRail.length > 0 && (
+            <section className="mt-8 content-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <IconBell size={20} className="text-[#ff9900]" />
+                  New from your subscriptions
+                </h2>
+                <Link href="/subscriptions" className="text-sm font-semibold text-[#ff9900] hover:text-[#ffb340] flex items-center gap-1 transition-colors">
+                  View all <IconChevronR size={16} />
+                </Link>
+              </div>
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none snap-x">
+                {subsRail.map((v, i) => (
+                  <div key={v.vkey || i} className="w-[240px] sm:w-[260px] shrink-0 snap-start">
+                    <VideoCard v={v} index={i} />
+                  </div>
+                ))}
               </div>
             </section>
           )}
