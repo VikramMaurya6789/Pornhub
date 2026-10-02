@@ -45,11 +45,19 @@ const inputCls =
 
 function mapFirebaseError(e) {
   const code = e?.code || '';
-  if (code.includes('invalid-phone-number')) return 'Enter a valid mobile number.';
-  if (code.includes('too-many-requests')) return 'Too many attempts. Try again later.';
-  if (code.includes('quota-exceeded')) return 'SMS limit reached. Try again later.';
-  if (code.includes('user-disabled')) return 'This number is blocked.';
-  return 'Could not send OTP. Check the number and try again.';
+  let msg;
+  if (code.includes('invalid-phone-number')) msg = 'Enter a valid mobile number.';
+  else if (code.includes('too-many-requests')) msg = 'Too many attempts. Try again later.';
+  else if (code.includes('quota-exceeded')) msg = 'SMS limit reached. Try again later.';
+  else if (code.includes('user-disabled')) msg = 'This number is blocked.';
+  else if (code.includes('captcha-check-failed')) msg = 'Security check failed. Try again, preferably on mobile data.';
+  else if (code.includes('invalid-app-credential')) msg = 'App verification failed. Wait a few minutes and try again.';
+  else if (code.includes('operation-not-allowed')) msg = 'Phone sign-in is switched off right now. Try email instead.';
+  else if (code.includes('network-request-failed')) msg = 'Network error. Check your connection and try again.';
+  else if (code.includes('app-not-authorized')) msg = 'This app is not authorized for phone sign-in.';
+  else msg = 'Could not send OTP. Check the number and try again.';
+  // Surface the raw Firebase code so the exact cause can be diagnosed.
+  return code ? `${msg} (${code})` : msg;
 }
 
 // ---------- Phone (OTP) sign-in via Firebase ----------
@@ -130,8 +138,13 @@ function PhoneAuth({ onSuccess }) {
       }
       setCachedUser(j.user);
       onSuccess(j.user);
-    } catch {
-      setError('Incorrect OTP. Check and try again.');
+    } catch (e) {
+      const code = e?.code || '';
+      setError(
+        code.includes('code-expired')
+          ? 'OTP expired. Request a new one.'
+          : `Incorrect OTP. Check and try again.${code ? ` (${code})` : ''}`
+      );
     } finally {
       setLoading(false);
     }
