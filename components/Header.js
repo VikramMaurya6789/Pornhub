@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   IconSearch, IconHome, IconFlame, IconEye, IconStar, IconGrid,
-  IconMenu, IconX, IconHeart, IconClock, IconTag, IconSparkles, IconHistory
+  IconMenu, IconX, IconHeart, IconClock, IconTag, IconSparkles, IconHistory, IconUser
 } from './Icons';
 import AuthModal from './AuthModal';
 import { fetchMe, getCachedUser, openAuthModal, signOut as authSignOut, subscribeAuth } from '../lib/auth-client';
