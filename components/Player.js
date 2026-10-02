@@ -6,7 +6,7 @@ import {
   IconFullscreen, IconFullscreenExit, IconPip, IconTheater, IconCast,
   IconSpeed, IconSettings, IconAlert, IconSparkles,
   IconSpinner, IconX, IconCheck, IconMoon, IconSun, IconArrowUp,
-  IconRefresh, IconList
+  IconRefresh, IconList, IconPlayNext
 } from './Icons';
 import { haptic } from '../lib/haptics';
 import { getQueue, removeFromQueue, clearQueue, QUEUE_CHANGED_EVENT } from '../lib/queue';
@@ -225,10 +225,13 @@ export default function Player({
   const lastTimeRef = useRef(0);
   const lastTapRef = useRef({ time: 0, x: 0 });
   const singleTapTimeoutRef = useRef(null);
+  const clickDelayTimeoutRef = useRef(null); // desktop: delays single-click play/pause so dblclick doesn't also toggle
+  const overlayTapRef = useRef(0); // last tap time on the paused overlay (for double-tap seek)
   const isDraggingSeekRef = useRef(false);
   const lastToggleRef = useRef(0);
   const isTouchInteractionRef = useRef(false);
   const touchResetTimeoutRef = useRef(null);
+  const playerHoverRef = useRef(false); // true while mouse is over the player (for keyboard shortcut scoping)
   const resumeTimeRef = useRef(0);
   const resumePlayingRef = useRef(false);
   const handleStreamErrorRef = useRef(null);
@@ -239,6 +242,21 @@ export default function Player({
   const castConfirmedRef = useRef(false);
   const [playerToast, setPlayerToast] = useState(null);
   const playerToastTimeoutRef = useRef(null);
+
+  // Clear all pending UI timers on unmount (no setState on unmounted component)
+  useEffect(() => {
+    return () => {
+      [
+        controlsTimeoutRef, feedbackTimeoutRef, singleTapTimeoutRef,
+        touchResetTimeoutRef, swipeHideTimeoutRef, playerToastTimeoutRef,
+        clickDelayTimeoutRef,
+      ].forEach((r) => {
+        try {
+          if (r.current) clearTimeout(r.current);
+        } catch {}
+      });
+    };
+  }, []);
 
   const showPlayerToast = useCallback((msg) => {
     if (playerToastTimeoutRef.current) clearTimeout(playerToastTimeoutRef.current);
@@ -350,6 +368,7 @@ export default function Player({
       healthyBufferSecondsRef.current = 0;
       tokenRefreshAttemptedRef.current = false;
       failedQualitiesRef.current.clear();
+      ambientTaintedRef.current = false; // allow ambient sampling again for the new video
       setHasError(false);
     }
   }, [vkey, initialTime]);
@@ -671,7 +690,7 @@ export default function Player({
 
       const request = new window.chrome.cast.media.LoadRequest(mediaInfo);
       request.currentTime = vid ? (vid.currentTime || 0) : currentTime;
-      request.autoplay = isPlaying || true;
+      request.autoplay = isPlaying;
 
       session.loadMedia(request).then(
         () => {
@@ -864,22 +883,28 @@ export default function Player({
           const freshData = await r.json();
           if (freshData.streams && freshData.streams.length > 0) {
             setInternalStreams(freshData.streams);
-            return;
           }
         }
       } catch {}
     }
 
+    // Always force a reload even if the URL didn't change — otherwise the
+    // src effect won't re-run and Retry appears to do nothing.
     const targetSrc = internalStreams[targetIdx]?.url;
     if (hlsRef.current && targetSrc) {
       try {
         hlsRef.current.loadSource(targetSrc);
         hlsRef.current.startLoad();
       } catch {}
-    } else if (videoRef.current) {
+    }
+    if (videoRef.current) {
       try {
-        videoRef.current.load();
-        videoRef.current.play().catch(() => {});
+        const vid = videoRef.current;
+        // Re-assign src to force the element to reload even for identical URLs
+        const cur = targetSrc || vid.currentSrc || vid.src;
+        if (cur && !hlsRef.current) vid.src = cur;
+        vid.load();
+        vid.play().catch(() => {});
       } catch {}
     }
   };
@@ -1252,8 +1277,15 @@ export default function Player({
       setShowShortcuts(false);
       return;
     }
-    togglePlay();
-    resetControlsTimeout();
+    // Delay the single-click toggle slightly: on desktop a double-click fires
+    // two click events before dblclick — without the delay the video would
+    // pause AND go fullscreen (YouTube-like behavior = fullscreen only).
+    if (clickDelayTimeoutRef.current) clearTimeout(clickDelayTimeoutRef.current);
+    clickDelayTimeoutRef.current = setTimeout(() => {
+      clickDelayTimeoutRef.current = null;
+      togglePlay();
+      resetControlsTimeout();
+    }, 260);
   };
 
   const toggleFullscreen = () => {
@@ -1430,6 +1462,12 @@ export default function Player({
     setHasError(false);
     setIsBuffering(true);
     setQuality(q);
+    // Keep qualityIndex in sync so error step-down / retry start from the
+    // actually-selected stream instead of a stale Auto index.
+    try {
+      const idx = (internalStreams || []).findIndex((s) => s.quality === q);
+      if (idx !== -1) setQualityIndex(idx);
+    } catch {}
     setShowSettingsMenu(false);
     try {
       localStorage.setItem('oh_quality', q);
@@ -1617,8 +1655,17 @@ export default function Player({
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
-      const tag = document.activeElement?.tagName?.toLowerCase();
+      const activeEl = document.activeElement;
+      const tag = activeEl?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      // Don't double-fire when a button/link has focus — the native click
+      // already handles Space/Enter on it (otherwise play/pause toggles twice).
+      if (tag === 'button' || activeEl?.closest?.('button, a, [role="button"]')) return;
+
+      // Only hijack keys when the user is interacting with the player —
+      // otherwise arrows/space would break page scrolling in comments etc.
+      const playerFocused = !!(containerRef.current && activeEl && containerRef.current.contains(activeEl));
+      if (!playerHoverRef.current && !playerFocused) return;
 
       const video = videoRef.current;
       if (!video) return;
@@ -1705,6 +1752,15 @@ export default function Player({
           setShowSpeedMenu(false);
           setShowShortcuts(false);
           setShowQueue(false);
+          // Also exit fullscreen on Escape (native Esc is unreliable when
+          // focus is inside the player container)
+          try {
+            if (document.fullscreenElement && document.exitFullscreen) {
+              document.exitFullscreen().catch(() => {});
+            } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+              document.webkitExitFullscreen();
+            }
+          } catch {}
           break;
         default:
           break;
@@ -1780,18 +1836,25 @@ export default function Player({
       lastTapRef.current = { time: 0, x: 0 };
     } else {
       lastTapRef.current = { time: now, x };
+      // Single-tap fires only after the double-tap window closes, so a second
+      // tap in between doesn't trigger BOTH single and double actions.
       singleTapTimeoutRef.current = setTimeout(() => {
         setShowControls((prev) => {
           const next = !prev;
           if (next) resetControlsTimeout();
           return next;
         });
-      }, 240);
+      }, 320);
     }
   };
 
   const handleDoubleClick = (e) => {
     e.preventDefault();
+    // Cancel the pending single-click toggle so double-click = fullscreen only
+    if (clickDelayTimeoutRef.current) {
+      clearTimeout(clickDelayTimeoutRef.current);
+      clickDelayTimeoutRef.current = null;
+    }
     toggleFullscreen();
   };
 
@@ -1822,6 +1885,12 @@ export default function Player({
       // Double-tap-and-hold → 2x speed (YouTube style). Only arms when this
       // touchstart lands inside the double-tap window of the previous tap.
       if (Date.now() - lastTapRef.current.time < 320) {
+        // The first tap armed a single-tap timer (controls toggle) — cancel it
+        // so the controls don't flicker when the hold activates.
+        if (singleTapTimeoutRef.current) {
+          clearTimeout(singleTapTimeoutRef.current);
+          singleTapTimeoutRef.current = null;
+        }
         const timer = setTimeout(() => {
           const s = swipeRef.current;
           const v = videoRef.current;
@@ -1858,6 +1927,9 @@ export default function Player({
             hold2xRef.current = null;
           }
         } else if (Math.abs(dx) > 24 || Math.abs(dy) > 24) {
+          // Any clear swipe (not just vertical) owns this touch — suppress the
+          // tap that React's onTouchEnd would otherwise fire (controls toggle).
+          swipeEndRef.current = Date.now();
           swipeRef.current = null;
           return;
         } else {
@@ -2137,7 +2209,12 @@ export default function Player({
       ref={containerRef}
       tabIndex={0}
       onMouseMove={handleMouseMove}
-      onMouseLeave={() => isPlaying && setShowControls(false)}
+      onMouseEnter={() => { playerHoverRef.current = true; }}
+      onMouseLeave={() => {
+        playerHoverRef.current = false;
+        // Don't yank controls (and open menus) away while a menu is open
+        if (isPlaying && !showSettingsMenu && !showSpeedMenu && !showQueue && !showShortcuts) setShowControls(false);
+      }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onDoubleClick={handleDoubleClick}
@@ -2231,12 +2308,20 @@ export default function Player({
         onWaiting={() => {
           if (hasStartedPlaybackRef.current) {
             setIsBuffering(true);
-            handleAutoRebufferStall();
+            // Don't treat a user seek as a network stall — stepping down
+            // quality just because the user jumped to an unbuffered spot
+            // is wrong; the spinner + normal buffering is enough.
+            if (!isUserSeekingRef.current) {
+              handleAutoRebufferStall();
+            }
           }
         }}
         onSeeking={handleSeeking}
         onSeeked={handleSeekedOrPlaying}
         onPlaying={() => {
+          // Skip state churn during the paused-seek micro-nudge (the play()
+          // there is just to force a frame render, not real playback).
+          if (isMicroNudgingRef.current) return;
           handleSeekedOrPlaying();
           setIsPlaying(true);
           hasStartedPlaybackRef.current = true;
@@ -2332,13 +2417,33 @@ export default function Player({
         <div
           onClick={(e) => {
             e.stopPropagation();
+            // Double-tap on the paused overlay: side zones seek ±10s (like the
+            // playing video), instead of play-then-instantly-pause.
+            const now = Date.now();
+            const rect = e.currentTarget.getBoundingClientRect();
+            const ratio = rect.width > 0 ? (e.clientX - rect.left) / rect.width : 0.5;
+            if (now - overlayTapRef.current < 320 && (ratio < 0.35 || ratio > 0.65)) {
+              overlayTapRef.current = 0;
+              const video = videoRef.current;
+              if (video) {
+                const targetTime = ratio < 0.35
+                  ? Math.max(0, video.currentTime - 10)
+                  : Math.min(duration || 99999, video.currentTime + 10);
+                requestSeek(targetTime, false);
+                triggerFeedback(ratio < 0.35 ? 'left' : 'right', ratio < 0.35 ? '-10s' : '+10s');
+              }
+              resetControlsTimeout();
+              return;
+            }
+            overlayTapRef.current = now;
             togglePlay();
             resetControlsTimeout();
           }}
           onTouchEnd={(e) => {
+            // Don't toggle here — the emulated click right after touchend
+            // already toggles via onClick. Toggling in both would double-fire
+            // (play then instantly pause) on touch devices.
             e.stopPropagation();
-            togglePlay();
-            resetControlsTimeout();
           }}
           data-interactive="true"
           style={{ touchAction: 'manipulation' }}
@@ -2496,7 +2601,7 @@ export default function Player({
             </div>
 
             {/* Time Display */}
-            <span className="text-[11px] sm:text-xs font-mono text-neutral-300 shrink-0">
+            <span className="text-[10px] sm:text-xs font-mono text-neutral-300 shrink-0 whitespace-nowrap tracking-tight">
               {formatTime(currentTime)} / {formatDuration(duration)}
             </span>
           </div>

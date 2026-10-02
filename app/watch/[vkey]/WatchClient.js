@@ -904,6 +904,24 @@ function WatchContent() {
 
           {/* Autoplay Next Countdown Overlay */}
           {nextCountdown !== null && nextVideo && (
+            miniPlayerActive ? (
+              /* Compact countdown for the floating mini-player */
+              <div className="absolute inset-x-0 bottom-0 z-40 bg-black/90 backdrop-blur-md px-3 py-2 flex items-center gap-2 fade-in">
+                <span className="text-[11px] font-bold text-[#ff9900] whitespace-nowrap">Up next {nextCountdown}s</span>
+                <span className="text-[11px] text-white truncate flex-1">{nextVideo.title}</span>
+                <button
+                  onClick={() => router.push(`/watch/${nextVideo.vkey}`)}
+                  className="shrink-0 px-3 py-1.5 rounded-full bg-[#ff9900] text-black font-bold text-[11px]">
+                  Play
+                </button>
+                <button
+                  onClick={() => setNextCountdown(null)}
+                  aria-label="Cancel autoplay"
+                  className="shrink-0 w-7 h-7 rounded-full bg-[#222] text-neutral-300 flex items-center justify-center">
+                  <IconX size={12} />
+                </button>
+              </div>
+            ) : (
             <div className="absolute inset-0 z-40 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center fade-in">
               <span className="text-xs font-bold uppercase tracking-wider text-[#ff9900] mb-2">Up next in {nextCountdown}s</span>
               <h3 className="text-xl font-bold text-white max-w-md line-clamp-2 mb-4">{nextVideo.title}</h3>
@@ -924,6 +942,7 @@ function WatchContent() {
                 </button>
               </div>
             </div>
+            )
           )}
           </div>
         </div>
