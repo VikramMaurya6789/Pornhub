@@ -2402,7 +2402,7 @@ export default function Player({
       <>
       {/* Bottom Floating Control Bar */}
       <div
-        className={`absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/85 to-transparent px-3 sm:px-4 pt-8 pb-safe flex flex-col gap-2 transition-all duration-300 z-30 ${
+        className={`absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/85 to-transparent px-2 sm:px-4 pt-8 pb-safe flex flex-col gap-2 transition-all duration-300 z-30 ${
           showControls || !isPlaying || showSettingsMenu || showSpeedMenu
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 translate-y-2 pointer-events-none group-hover/player:opacity-100 group-hover/player:translate-y-0 group-hover/player:pointer-events-auto'
@@ -2452,7 +2452,7 @@ export default function Player({
         </div>
 
         {/* Controls Row */}
-        <div className="control-bar flex items-center justify-between gap-2 text-white text-sm select-none pointer-events-auto">
+        <div className="control-bar flex items-center justify-between gap-1 sm:gap-2 text-white text-sm select-none pointer-events-auto">
           <div className="flex items-center gap-1 sm:gap-3 shrink-0">
             {/* Play / Pause Button */}
             <button
@@ -2526,7 +2526,7 @@ export default function Player({
               }}
               onPointerDown={(e) => e.stopPropagation()}
               aria-label={loop ? 'Disable loop' : 'Loop this video'}
-              className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 transition-colors cursor-pointer touch-manipulation pointer-events-auto ${
+              className={`min-w-[44px] min-h-[44px] hidden sm:flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 transition-colors cursor-pointer touch-manipulation pointer-events-auto ${
                 loop ? 'text-[#ff9900]' : 'text-white hover:text-[#ff9900]'
               }`}
               title={loop ? 'Loop ON — video repeats' : 'Loop this video'}
@@ -2535,7 +2535,7 @@ export default function Player({
             </button>
 
             {/* Up-Next Queue Button */}
-            <div className="relative queue-panel-container">
+            <div className="relative queue-panel-container hidden sm:block">
               <button
                 type="button"
                 onClick={(e) => {
@@ -2572,7 +2572,7 @@ export default function Player({
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
                 aria-label="Playback speed"
-                className="min-h-[44px] min-w-[44px] flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-white hover:text-[#ff9900] text-[11px] sm:text-xs font-bold transition-colors cursor-pointer touch-manipulation pointer-events-auto"
+                className="min-h-[44px] min-w-[44px] flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-white hover:text-[#ff9900] text-[11px] sm:text-xs font-bold transition-colors cursor-pointer touch-manipulation pointer-events-auto"
                 title="Playback Speed"
               >
                 <IconSpeed size={14} />
@@ -2631,8 +2631,63 @@ export default function Player({
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="absolute right-0 bottom-12 z-50 bg-[#141414] border border-[#2a2a2a] rounded-2xl p-1.5 shadow-2xl min-w-[145px] flex flex-col gap-1 backdrop-blur-md pointer-events-auto"
+                  className="absolute right-0 bottom-12 z-50 bg-[#141414] border border-[#2a2a2a] rounded-2xl p-1.5 shadow-2xl min-w-[145px] max-h-[62vh] overflow-y-auto flex flex-col gap-1 backdrop-blur-md pointer-events-auto"
                 >
+                  {/* Mobile-only: Loop toggle (hidden from control bar on small screens to prevent overflow) */}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); toggleLoop(); }}
+                    aria-label={loop ? 'Disable loop' : 'Loop this video'}
+                    className="sm:hidden w-full flex items-center justify-between px-3 py-2 border-b border-[#222] cursor-pointer min-h-[44px]"
+                  >
+                    <span className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                      <IconRefresh size={14} className="text-[#ff9900]" /> Loop video
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className={`w-11 h-6 rounded-full transition-colors relative shrink-0 flex items-center ${
+                        loop ? 'bg-[#ff9900]' : 'bg-[#333]'
+                      }`}
+                    >
+                      <span
+                        className={`block w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                          loop ? 'translate-x-5' : 'translate-x-0.5'
+                        }`}
+                      />
+                    </span>
+                  </button>
+
+                  {/* Mobile-only: Up Next queue opener */}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); haptic(); setShowSettingsMenu(false); setShowQueue(true); }}
+                    className="sm:hidden w-full flex items-center justify-between px-3 py-2 border-b border-[#222] cursor-pointer min-h-[44px]"
+                  >
+                    <span className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                      <IconList size={14} className="text-[#ff9900]" /> Up Next
+                      {queue.length > 0 && (
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-[#ff9900]/20 text-[#ff9900]">
+                          {queue.length}
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-[11px] font-bold text-neutral-500">Open</span>
+                  </button>
+
+                  {/* Mobile-only: Cast to TV */}
+                  {canCast && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setShowSettingsMenu(false); handleCast(); }}
+                      className="sm:hidden w-full flex items-center justify-between px-3 py-2 border-b border-[#222] cursor-pointer min-h-[44px]"
+                    >
+                      <span className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                        <IconCast size={14} className="text-[#ff9900]" /> Cast to TV
+                      </span>
+                      {isCasting && <span className="text-[10px] font-bold text-[#ff9900]">Connected</span>}
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={toggleAutoplaySetting}
@@ -2781,7 +2836,7 @@ export default function Player({
                   handleCast();
                 }}
                 aria-label={isCasting ? 'Connected to Cast device' : 'Cast to TV / Device'}
-                className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 transition-colors cursor-pointer touch-manipulation ${
+                className={`min-w-[44px] min-h-[44px] hidden sm:flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 transition-colors cursor-pointer touch-manipulation ${
                   isCasting ? 'text-[#ff9900] bg-[#ff9900]/15 ring-1 ring-[#ff9900]/40' : 'text-neutral-200 hover:text-[#ff9900]'
                 }`}
                 title={isCasting ? 'Casting to TV (Connected)' : 'Cast Video to TV'}
