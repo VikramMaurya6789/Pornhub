@@ -1474,15 +1474,20 @@ export default function Player({
     }
 
     // Watchdog: if the seek doesn't complete within 8s (no 'seeked' event),
-    // force the loader to resume instead of spinning forever.
+    // force the loader to abort the stuck request and resume instead of
+    // spinning forever.
     if (seekWatchdogRef.current) clearTimeout(seekWatchdogRef.current);
     seekWatchdogRef.current = setTimeout(() => {
       seekWatchdogRef.current = null;
       if (isSeekingRef.current) {
         console.warn('[Player] Seek watchdog: seek did not complete in 8s, forcing recovery');
         try {
-          if (hlsRef.current) hlsRef.current.startLoad();
-          else if (videoRef.current) videoRef.current.load();
+          if (hlsRef.current) {
+            try { hlsRef.current.stopLoad(); } catch {}
+            hlsRef.current.startLoad();
+          } else if (videoRef.current) {
+            videoRef.current.load();
+          }
         } catch {}
         handleSeekedOrPlayingRef.current?.();
       }
