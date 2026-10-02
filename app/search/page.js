@@ -1,12 +1,11 @@
 'use client';
-import { useEffect, useState, useMemo, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import VideoCard, { VideoGridSkeleton } from '../../components/VideoCard';
 import Pagination from '../../components/UI';
-import ListingFilterBar from '../../components/ListingFilterBar';
 import { IconSearch } from '../../components/Icons';
-import { parseDurationSec, parseViewsNumber } from '../../lib/format';
+import { parseDurationSec } from '../../lib/format';
 import BackToTop from '../../components/BackToTop';
 
 const POPULAR_SEARCHES = [
@@ -16,17 +15,11 @@ const POPULAR_SEARCHES = [
 
 function SearchInner() {
   const sp = useSearchParams();
-  const router = useRouter();
   const q = sp.get('q') || '';
   const page = Math.max(1, parseInt(sp.get('page') || '1'));
-  const urlSort = sp.get('sort') || 'relevant';
+  const sort = sp.get('sort') || 'relevant';
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
-
-  // Client filter states
-  const [duration, setDuration] = useState('all');
-  const [hdOnly, setHdOnly] = useState(false);
-  const [sort, setSort] = useState(urlSort);
 
   useEffect(() => {
     setData(null);
@@ -43,44 +36,14 @@ function SearchInner() {
     })();
   }, [q, page, sort]);
 
-  const handleSortChange = (newSort) => {
-    setSort(newSort);
-    router.push(`/search?q=${encodeURIComponent(q)}&page=1&sort=${newSort}`);
-  };
-
-  const filteredVideos = useMemo(() => {
-    let list = Array.isArray(data?.videos) ? [...data.videos] : [];
-
-    // 1. Duration filter (all strictly >= 10 min = 600s)
-    list = list.filter((v) => {
-      const sec = parseDurationSec(v.duration);
-      if (sec < 600) return false;
-      if (duration === '10-20') return sec <= 1200;
-      if (duration === '20-40') return sec > 1200 && sec <= 2400;
-      if (duration === '40+') return sec > 2400;
-      return true;
-    });
-
-    // 2. HD Only
-    if (hdOnly) {
-      list = list.filter((v) => Boolean(v.hd));
-    }
-
-    // 3. Client Sort fallback if needed
-    if (sort === 'viewed') {
-      list.sort((a, b) => parseViewsNumber(b.views) - parseViewsNumber(a.views));
-    } else if (sort === 'longest') {
-      list.sort((a, b) => parseDurationSec(b.duration) - parseDurationSec(a.duration));
-    } else if (sort === 'rated') {
-      list.sort((a, b) => (parseInt(b.percent || '95') || 95) - (parseInt(a.percent || '95') || 95));
-    }
-
-    return list;
-  }, [data?.videos, duration, hdOnly, sort]);
+  // Safety floor: full-length videos only (API already enforces this too)
+  const videos = Array.isArray(data?.videos)
+    ? data.videos.filter((v) => parseDurationSec(v.duration) >= 600)
+    : [];
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 py-6">
-      <div className="mb-4">
+      <div className="mb-6">
         <h1 className="fade-in text-xl md:text-2xl font-bold text-white flex items-center gap-2.5">
           <IconSearch size={22} className="text-[#ff9900]" />
           Results for <span className="text-[#ff9900]">&ldquo;{q}&rdquo;</span>
@@ -88,26 +51,16 @@ function SearchInner() {
         <p className="text-xs text-neutral-400 mt-1">Full length HD videos • 10+ minutes only</p>
       </div>
 
-      <ListingFilterBar
-        duration={duration}
-        onDurationChange={setDuration}
-        hdOnly={hdOnly}
-        onHdOnlyChange={setHdOnly}
-        sort={sort}
-        onSortChange={handleSortChange}
-        totalCount={filteredVideos.length}
-      />
-
       {err && <p className="text-red-400 text-sm mb-6">Search failed: {err}</p>}
 
       {!data && !err ? (
         <VideoGridSkeleton n={18} />
       ) : data && (
         <>
-          {filteredVideos.length > 0 ? (
+          {videos.length > 0 ? (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-4 gap-y-7">
-                {filteredVideos.map((v, i) => (
+                {videos.map((v, i) => (
                   <VideoCard key={v.vkey || i} v={v} index={i} />
                 ))}
               </div>
