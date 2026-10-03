@@ -1147,10 +1147,28 @@ export default function Player({
       stallTimer = setTimeout(() => {
         const video = videoRef.current;
         if (!video) return;
-        console.warn('[Player] Buffer stalled, nudging video forward...');
         try {
-          if (video.currentTime > 0) {
-            video.currentTime = Math.min(duration || 99999, video.currentTime + 0.15);
+          const ct = video.currentTime;
+          const buf = video.buffered;
+          let inBuffer = false;
+          let nextBufferStart = -1;
+          for (let i = 0; i < buf.length; i++) {
+            if (ct >= buf.start(i) - 0.1 && ct <= buf.end(i) + 0.1) {
+              inBuffer = true;
+              break;
+            }
+            if (buf.start(i) > ct && nextBufferStart < 0) {
+              nextBufferStart = buf.start(i);
+            }
+          }
+          if (!inBuffer && nextBufferStart >= 0) {
+            // Playhead is in a gap but data exists ahead — jump to it
+            console.warn(`[Player] Buffer gap at ${ct.toFixed(1)}s, jumping to buffered ${nextBufferStart.toFixed(1)}s`);
+            video.currentTime = nextBufferStart + 0.05;
+            video.play().catch(() => {});
+          } else if (ct > 0) {
+            console.warn('[Player] Buffer stalled, nudging video forward...');
+            video.currentTime = Math.min(duration || 99999, ct + 0.15);
             video.play().catch(() => {});
           }
         } catch {}
