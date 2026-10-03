@@ -4,7 +4,7 @@ const http = require('http');
 const https = require('https');
 const { URL } = require('url');
 
-const PORT = 3001;
+const PORT = 8080;
 // Change this to your frontend origin for tighter CORS (or keep * for now)
 const ALLOW_ORIGIN = '*';
 
