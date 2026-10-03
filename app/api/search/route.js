@@ -32,6 +32,12 @@ export async function GET(req) {
     return NextResponse.json(
       {
         ...data,
+        _debug: {
+          q, page, sort,
+          videoCount: (data.videos || []).length,
+          firstKeys: (data.videos || []).slice(0, 3).map((v) => v.vkey),
+          totalText: data.totalText,
+        },
         videos: (data.videos || [])
           .filter((v) => parseDurationSec(v.duration) >= 600)
           .map((v) => ({
