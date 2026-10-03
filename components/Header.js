@@ -52,8 +52,17 @@ export default function Header() {
   const [recentSearches, setRecentSearches] = useState([]);
   const [user, setUser] = useState(undefined); // undefined = loading, null = guest
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const headerRef = useRef(null);
   const router = useRouter();
+
+  // Header intensifies on scroll (shadow + stronger blur)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   // Auth state
   useEffect(() => {
@@ -201,7 +210,7 @@ export default function Header() {
     ) : null;
 
   return (
-    <header ref={headerRef} className="sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-b border-[#1f1f1f]">
+    <header ref={headerRef} className={`sticky top-0 z-40 bg-[#0a0a0a]/95 backdrop-blur border-b transition-all duration-300 ${scrolled ? 'border-[#2a2a2a] shadow-[0_8px_30px_-10px_rgba(0,0,0,0.9)]' : 'border-[#1f1f1f]'}`}>
       <div className="max-w-[1600px] mx-auto px-3 sm:px-4 h-16 flex items-center gap-2 sm:gap-4">
         <button
           className="lg:hidden p-2 sm:p-2.5 -ml-1 sm:ml-0 text-neutral-300 hover:text-[#ff9900] transition-colors shrink-0"
@@ -222,7 +231,7 @@ export default function Header() {
               onFocus={() => setSearchFocused(true)}
               onKeyDown={handleKeyDown}
               placeholder="Search videos, models, categories..."
-              className="w-full bg-[#1c1c1c] border border-[#2c2c2c] focus:border-[#ff9900] rounded-full pl-5 pr-12 py-2.5 text-sm text-white placeholder-neutral-500 outline-none transition-colors"
+              className={`w-full bg-[#1c1c1c] border rounded-full pl-5 pr-12 py-2.5 text-sm text-white placeholder-neutral-500 outline-none transition-all duration-300 ${searchFocused ? 'border-[#ff9900] shadow-[0_0_0_3px_rgba(255,153,0,0.15),0_0_20px_rgba(255,153,0,0.1)]' : 'border-[#2c2c2c]'}`}
             />
             <button
               type="submit"
