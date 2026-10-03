@@ -20,6 +20,7 @@ node --version
 
 echo "=== [3/6] Caddy (auto HTTPS) ==="
 apt-get install -y -qq debian-keyring debian-archive-keyring apt-transport-https > /dev/null
+rm -f /usr/share/keyrings/caddy-stable-archive-keyring.gpg
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list > /dev/null
 apt-get update -qq
@@ -186,10 +187,25 @@ StandardError=journal
 WantedBy=multi-user.target
 EOF
 
-systemctl daemon-reload
-systemctl enable --now oh-proxy
-sleep 2
-systemctl is-active --quiet oh-proxy && echo "proxy: RUNNING" || (echo "proxy: FAILED"; journalctl -u oh-proxy -n 20 --no-pager)
+# Start proxy: systemd if available, else nohup (Docker/containers)
+if [ -d /run/systemd/system ]; then
+  systemctl daemon-reload
+  systemctl enable --now oh-proxy
+  sleep 2
+  systemctl is-active --quiet oh-proxy && echo "proxy: RUNNING (systemd)" || (echo "proxy: FAILED"; journalctl -u oh-proxy -n 20 --no-pager)
+else
+  echo "no systemd detected, using nohup"
+  pkill -f "node /opt/oh-proxy/proxy.js" 2>/dev/null || true
+  nohup node /opt/oh-proxy/proxy.js > /var/log/oh-proxy.log 2>&1 &
+  sleep 2
+  if pgrep -f "node /opt/oh-proxy/proxy.js" > /dev/null; then
+    echo "proxy: RUNNING (nohup, pid $(pgrep -f 'node /opt/oh-proxy/proxy.js' | head -1))"
+  else
+    echo "proxy: FAILED"; tail -20 /var/log/oh-proxy.log
+  fi
+  # Keep alive across shell exits: add to crontab reboot check
+  (crontab -l 2>/dev/null | grep -v oh-proxy; echo "@reboot nohup node /opt/oh-proxy/proxy.js > /var/log/oh-proxy.log 2>&1 &") | crontab -
+fi
 
 echo "=== [5/6] Caddy reverse proxy ==="
 cat > /etc/caddy/Caddyfile <<EOF
@@ -201,15 +217,33 @@ $DOMAIN {
   }
 }
 EOF
-systemctl reload caddy
-echo "caddy: reloaded (cert will issue on first HTTPS hit)"
+if [ -d /run/systemd/system ]; then
+  systemctl reload caddy
+  echo "caddy: reloaded via systemd"
+else
+  pkill caddy 2>/dev/null || true
+  sleep 1
+  nohup caddy run --config /etc/caddy/Caddyfile --adapter caddyfile > /var/log/caddy.log 2>&1 &
+  sleep 3
+  if pgrep -x caddy > /dev/null; then
+    echo "caddy: RUNNING (pid $(pgrep -x caddy | head -1))"
+  else
+    echo "caddy: FAILED"; tail -20 /var/log/caddy.log
+  fi
+  (crontab -l 2>/dev/null | grep -v "caddy run"; echo "@reboot nohup caddy run --config /etc/caddy/Caddyfile --adapter caddyfile > /var/log/caddy.log 2>&1 &") | crontab -
+fi
+echo "(cert will issue on first HTTPS hit)"
 
 echo "=== [6/6] Firewall ==="
-ufw --force enable > /dev/null 2>&1 || true
-ufw allow 80/tcp > /dev/null
-ufw allow 443/tcp > /dev/null
-ufw allow 22/tcp > /dev/null
-echo "firewall: 22/80/443 open"
+if command -v ufw > /dev/null 2>&1; then
+  ufw --force enable > /dev/null 2>&1 || true
+  ufw allow 80/tcp > /dev/null
+  ufw allow 443/tcp > /dev/null
+  ufw allow 22/tcp > /dev/null
+  echo "firewall: 22/80/443 open"
+else
+  echo "firewall: ufw not available, skipping (use provider firewall)"
+fi
 
 echo ""
 echo "=== DONE ==="
