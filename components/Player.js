@@ -99,6 +99,7 @@ export default function Player({
   const [errorMsg, setErrorMsg] = useState('');
   const [showControls, setShowControls] = useState(true);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [contextMenu, setContextMenu] = useState(null); // {x, y} for right-click menu
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [isAutoplay, setIsAutoplay] = useState(() => {
@@ -1117,18 +1118,20 @@ export default function Player({
 
   // Close menus when clicking outside cleanly using pointerdown
   useEffect(() => {
-    if (!showSettingsMenu && !showSpeedMenu && !showQueue) return;
+    if (!showSettingsMenu && !showSpeedMenu && !showQueue && !contextMenu) return;
     const handleOutsideClick = (e) => {
       if (
         e.target &&
         e.target.closest &&
         !e.target.closest('.settings-menu-container') &&
         !e.target.closest('.speed-menu-container') &&
-        !e.target.closest('.queue-panel-container')
+        !e.target.closest('.queue-panel-container') &&
+        !e.target.closest('.player-context-menu')
       ) {
         setShowSettingsMenu(false);
         setShowSpeedMenu(false);
         setShowQueue(false);
+        setContextMenu(null);
       }
     };
     document.addEventListener('pointerdown', handleOutsideClick);
@@ -1696,6 +1699,7 @@ export default function Player({
           setShowSpeedMenu(false);
           setShowShortcuts(false);
           setShowQueue(false);
+          setContextMenu(null);
           // Also exit fullscreen on Escape (native Esc is unreliable when
           // focus is inside the player container)
           try {
@@ -2142,6 +2146,16 @@ export default function Player({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onDoubleClick={handleDoubleClick}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = containerRef.current?.getBoundingClientRect();
+        const x = rect ? Math.min(e.clientX - rect.left, rect.width - 220) : e.clientX;
+        const y = rect ? Math.min(e.clientY - rect.top, rect.height - 160) : e.clientY;
+        setContextMenu({ x: Math.max(8, x), y: Math.max(8, y) });
+        setShowControls(true);
+        resetControlsTimeout();
+      }}
       className={`group/player relative aspect-video bg-black rounded-xl overflow-hidden ring-1 ring-white/10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.9)] select-none outline-none ${
         theaterMode ? 'w-full max-h-[82vh]' : ''
       }`}
@@ -3076,6 +3090,50 @@ export default function Player({
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Right-click context menu (Pornhub-style) */}
+      {contextMenu && (
+        <div
+          className="player-context-menu absolute z-[60] w-56 bg-[#141414]/95 backdrop-blur-md border border-[#2a2a2a] rounded-xl shadow-2xl p-1.5 flex flex-col gap-0.5"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/watch/${vkey}`;
+              navigator.clipboard?.writeText(url).catch(() => {});
+              setContextMenu(null);
+            }}
+            className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-neutral-200 hover:bg-white/10 hover:text-white transition-colors"
+          >
+            Copy Video URL
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const t = Math.round(videoRef.current?.currentTime || 0);
+              const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/watch/${vkey}?t=${t}`;
+              navigator.clipboard?.writeText(url).catch(() => {});
+              setContextMenu(null);
+            }}
+            className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-neutral-200 hover:bg-white/10 hover:text-white transition-colors"
+          >
+            Copy Video URL From Current Time
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              toggleLoop();
+              setContextMenu(null);
+            }}
+            className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-neutral-200 hover:bg-white/10 hover:text-white transition-colors flex items-center justify-between"
+          >
+            Loop {loop && <span className="text-[#ff9900]">✓</span>}
+          </button>
         </div>
       )}
     </div>
