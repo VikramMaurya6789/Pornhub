@@ -28,6 +28,11 @@ function WatchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const vkey = params?.vkey;
+
+  // Always start at top when opening a video (Next.js preserves scroll otherwise)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [vkey]);
   // Resume: explicit ?t= param wins; otherwise restore saved position from history
   // (only when meaningfully into the video but not nearly finished).
   const { initialTime, resumedFrom } = useMemo(() => {
@@ -327,12 +332,25 @@ function WatchContent() {
 
     (async () => {
       try {
-        let r = await fetch(`/api/video?vkey=${vkey}`);
-        if (!r.ok) {
-          r = await fetch(`/api/video?vkey=${vkey}&refresh=1`);
+        // Use prefetched data if available (from VideoCard tap/hover)
+        let j = null;
+        try {
+          const key = `oh_prefetch_${vkey}_data`;
+          const cached = sessionStorage.getItem(key);
+          if (cached) {
+            j = JSON.parse(cached);
+            sessionStorage.removeItem(key);
+            sessionStorage.removeItem(`oh_prefetch_${vkey}`);
+          }
+        } catch {}
+        if (!j || j.error) {
+          let r = await fetch(`/api/video?vkey=${vkey}`);
+          if (!r.ok) {
+            r = await fetch(`/api/video?vkey=${vkey}&refresh=1`);
+          }
+          j = await r.json();
+          if (!r.ok) throw new Error(j.error || 'Failed to load video');
         }
-        const j = await r.json();
-        if (!r.ok) throw new Error(j.error || 'Failed to load video');
         if (cancelled) return;
         setV(j);
 

@@ -203,10 +203,30 @@ export default function VideoCard({ v, index = 0 }) {
 
   if (isHidden) return null;
 
+  // Prefetch video data on tap/hover so the watch page starts instantly
+  const prefetchVideo = () => {
+    if (!v?.vkey) return;
+    try {
+      const key = `oh_prefetch_${v.vkey}`;
+      if (sessionStorage.getItem(key)) return; // already prefetched
+      sessionStorage.setItem(key, '1');
+      fetch(`/api/video?vkey=${v.vkey}`, { priority: 'high' })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data && !data.error) {
+            try { sessionStorage.setItem(key + '_data', JSON.stringify(data)); } catch {}
+          }
+        })
+        .catch(() => {});
+    } catch {}
+  };
+
   return (
     <Link
       href={`/watch/${v.vkey}`}
       prefetch={false}
+      onClick={prefetchVideo}
+      onMouseEnter={prefetchVideo}
       className="card-in card-hover-elevate group block relative"
       style={{ animationDelay: `${Math.min(index, 24) * 35}ms` }}
     >
