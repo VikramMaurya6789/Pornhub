@@ -3145,6 +3145,18 @@ export default function Player({
           <button
             type="button"
             onClick={() => {
+              const origin = typeof window !== 'undefined' ? window.location.origin : '';
+              const embed = `<iframe src="${origin}/watch/${vkey}" width="640" height="360" frameborder="0" allowfullscreen></iframe>`;
+              navigator.clipboard?.writeText(embed).catch(() => {});
+              setContextMenu(null);
+            }}
+            className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-neutral-200 hover:bg-white/10 hover:text-white transition-colors"
+          >
+            Copy Embed Code
+          </button>
+          <button
+            type="button"
+            onClick={() => {
               toggleLoop();
               setContextMenu(null);
             }}

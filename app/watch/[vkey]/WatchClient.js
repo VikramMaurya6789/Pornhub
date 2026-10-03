@@ -1114,6 +1114,22 @@ function WatchContent() {
                             <IconQr size={15} className="text-[#ff9900]" />
                             <span>Show QR Code</span>
                           </button>
+                          <button
+                            onClick={() => {
+                              const origin = typeof window !== 'undefined' ? window.location.origin : 'https://orangehub.royalcloud.qzz.io';
+                              const embed = `<iframe src="${origin}/watch/${vkey}" width="640" height="360" frameborder="0" allowfullscreen></iframe>`;
+                              navigator.clipboard?.writeText(embed).then(() => {
+                                showToast('Embed code copied!');
+                              }).catch(() => {
+                                prompt('Copy embed code:', embed);
+                              });
+                              setShowShareMenu(false);
+                            }}
+                            className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-neutral-200 hover:bg-[#252525] transition-colors flex items-center justify-between"
+                          >
+                            <span>Copy Embed Code</span>
+                            <span className="font-mono text-[10px] bg-white/10 px-1 py-0.5 rounded text-neutral-400">&lt;iframe&gt;</span>
+                          </button>
                         </div>
                       )}
                     </div>
