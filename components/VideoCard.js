@@ -203,7 +203,8 @@ export default function VideoCard({ v, index = 0 }) {
 
   if (isHidden) return null;
 
-  // Prefetch video data on tap/hover so the watch page starts instantly
+  // Prefetch video data on tap so the watch page starts instantly
+  // (hover prefetch removed — it fired too many requests while scrolling)
   const prefetchVideo = () => {
     if (!v?.vkey) return;
     try {
@@ -226,7 +227,6 @@ export default function VideoCard({ v, index = 0 }) {
       href={`/watch/${v.vkey}`}
       prefetch={false}
       onClick={prefetchVideo}
-      onMouseEnter={prefetchVideo}
       className="card-in card-hover-elevate group block relative"
       style={{ animationDelay: `${Math.min(index, 24) * 35}ms` }}
     >
