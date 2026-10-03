@@ -259,9 +259,17 @@ export default function Player({
   const computeInitialAutoIndex = useCallback((streamList) => {
     if (!streamList || !streamList.length) return 0;
 
-    // Fast start: begin at 480p (small segments = instant first frame),
-    // then step up quickly if bandwidth allows. Starting at 1080p on a
-    // slow proxy means waiting 15s+ for the first segment.
+    let isSlow = false;
+    if (typeof navigator !== 'undefined' && navigator.connection) {
+      const conn = navigator.connection;
+      if (conn.saveData || ['slow-2g', '2g', '3g'].includes(conn.effectiveType)) {
+        isSlow = true;
+      }
+    }
+
+    if (!isSlow) return 0; // highest available quality first (1080p)
+
+    // Slow network: start at 480p (or lowest available)
     for (let i = 0; i < streamList.length; i++) {
       const qNum = parseInt(streamList[i].quality, 10);
       if (!isNaN(qNum) && qNum <= 480) return i;
