@@ -259,17 +259,9 @@ export default function Player({
   const computeInitialAutoIndex = useCallback((streamList) => {
     if (!streamList || !streamList.length) return 0;
 
-    let isSlow = false;
-    if (typeof navigator !== 'undefined' && navigator.connection) {
-      const conn = navigator.connection;
-      if (conn.saveData || ['slow-2g', '2g', '3g'].includes(conn.effectiveType)) {
-        isSlow = true;
-      }
-    }
-
-    if (!isSlow) return 0; // highest available quality first
-
-    // Slow network: start at 480p (or lowest available)
+    // Fast start: begin at 480p (small segments = instant first frame),
+    // then step up quickly if bandwidth allows. Starting at 1080p on a
+    // slow proxy means waiting 15s+ for the first segment.
     for (let i = 0; i < streamList.length; i++) {
       const qNum = parseInt(streamList[i].quality, 10);
       if (!isNaN(qNum) && qNum <= 480) return i;
@@ -358,7 +350,7 @@ export default function Player({
   }, [quality, qualityIndex, internalStreams]);
 
   // Monitor healthy buffer for stepping back up in Auto mode
-  // If 20s pass with healthy buffer (>= 10s ahead), step back up (never above initial pick without user action)
+  // If 10s pass with healthy buffer (>= 10s ahead), step back up (never above initial pick without user action)
   useEffect(() => {
     if (!isPlaying || quality !== 'auto') return;
 
@@ -381,7 +373,7 @@ export default function Player({
 
       if (bufferAhead >= 10) {
         healthyBufferSecondsRef.current += 1;
-        if (healthyBufferSecondsRef.current >= 20) {
+        if (healthyBufferSecondsRef.current >= 10) {
           healthyBufferSecondsRef.current = 0;
           // Never step above the initial pick without user action
           if (qualityIndex > initialAutoIndexRef.current) {
@@ -2433,8 +2425,8 @@ export default function Player({
       <div
         className={`absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/85 to-transparent px-2 sm:px-4 pt-8 pb-safe flex flex-col gap-2 transition-all duration-300 z-30 ${
           showControls || !isPlaying || showSettingsMenu || showSpeedMenu
-            ? 'opacity-100 translate-y-0 pointer-events-auto'
-            : 'opacity-0 translate-y-2 pointer-events-none group-hover/player:opacity-100 group-hover/player:translate-y-0 group-hover/player:pointer-events-auto'
+            ? 'opacity-100 translate-y-0 pointer-events-auto visible'
+            : 'opacity-0 translate-y-2 pointer-events-none invisible group-hover/player:opacity-100 group-hover/player:translate-y-0 group-hover/player:pointer-events-auto group-hover/player:visible'
         }`}
       >
         {/* Scrubber Progress Bar */}
