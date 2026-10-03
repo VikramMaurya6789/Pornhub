@@ -188,7 +188,7 @@ WantedBy=multi-user.target
 EOF
 
 # Start proxy: systemd if available, else nohup (Docker/containers)
-if [ -d /run/systemd/system ]; then
+if [ "$(ps -p 1 -o comm= 2>/dev/null | tr -d ' ')" = "systemd" ]; then
   systemctl daemon-reload
   systemctl enable --now oh-proxy
   sleep 2
@@ -217,7 +217,7 @@ $DOMAIN {
   }
 }
 EOF
-if [ -d /run/systemd/system ]; then
+if [ "$(ps -p 1 -o comm= 2>/dev/null | tr -d ' ')" = "systemd" ]; then
   systemctl reload caddy
   echo "caddy: reloaded via systemd"
 else
