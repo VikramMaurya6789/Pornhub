@@ -54,11 +54,12 @@ function BottomLink({ item, active }) {
     <Link
       href={item.href}
       aria-label={item.label}
-      className={`flex flex-col items-center justify-center gap-1 transition-colors ${
+      className={`relative flex flex-col items-center justify-center gap-1 transition-colors ${
         active ? 'text-[#ff9900]' : 'text-neutral-400 active:text-[#ff9900]'
       }`}
     >
-      <Icon size={22} />
+      {active && <span className="absolute top-1.5 w-1 h-1 rounded-full bg-[#ff9900]" />}
+      <Icon size={22} className={active ? 'drop-shadow-[0_0_6px_rgba(255,153,0,0.6)]' : ''} />
       <span className="text-[10px] font-bold">{item.label}</span>
     </Link>
   );

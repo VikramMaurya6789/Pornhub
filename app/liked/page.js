@@ -37,8 +37,10 @@ export default function LikedVideosPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3">
-            <IconHeart size={28} className="text-[#ff9900] fill-[#ff9900]" />
+          <h1 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3 tracking-tight">
+            <span className="w-11 h-11 rounded-xl bg-[#ff9900]/10 border border-[#ff9900]/20 flex items-center justify-center text-[#ff9900]">
+              <IconHeart size={22} className="fill-[#ff9900]" />
+            </span>
             <span>Liked Videos</span>
           </h1>
           <p className="text-xs text-neutral-400 mt-1">

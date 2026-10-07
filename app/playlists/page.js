@@ -147,8 +147,10 @@ export default function PlaylistsPage() {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-3">
-            <IconList size={26} className="text-[#ff9900]" />
+          <h1 className="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-3 tracking-tight">
+            <span className="w-11 h-11 rounded-xl bg-[#ff9900]/10 border border-[#ff9900]/20 flex items-center justify-center text-[#ff9900]">
+              <IconList size={22} />
+            </span>
             <span>My Playlists</span>
           </h1>
           <p className="text-sm text-neutral-400 mt-1">

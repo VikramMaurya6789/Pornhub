@@ -44,11 +44,13 @@ function SearchInner() {
   return (
     <div className="max-w-[1600px] mx-auto px-4 py-6">
       <div className="mb-6">
-        <h1 className="fade-in text-xl md:text-2xl font-bold text-white flex items-center gap-2.5">
-          <IconSearch size={22} className="text-[#ff9900]" />
+        <h1 className="fade-in flex items-center gap-2.5 text-xl md:text-2xl font-extrabold text-white tracking-tight">
+          <span className="w-9 h-9 rounded-xl bg-[#ff9900]/10 border border-[#ff9900]/20 flex items-center justify-center text-[#ff9900]">
+            <IconSearch size={18} />
+          </span>
           Results for <span className="text-[#ff9900]">&ldquo;{q}&rdquo;</span>
         </h1>
-        <p className="text-xs text-neutral-400 mt-1">Full length HD videos • 10+ minutes only</p>
+        <p className="text-xs text-neutral-500 mt-2 ml-[3.25rem]">Full length HD videos • 10+ minutes only</p>
       </div>
 
       {err && <p className="text-red-400 text-sm mb-6">Search failed: {err}</p>}

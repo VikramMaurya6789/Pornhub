@@ -121,9 +121,9 @@ export default function FavoritesPage() {
     <div className="max-w-[1600px] mx-auto px-4 py-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#1f1f1f] mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-3">
-            <span className="p-2 rounded-xl bg-[#ff9900]/15 text-[#ff9900]">
-              <IconHeart size={26} className="fill-[#ff9900]" />
+          <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-3 tracking-tight">
+            <span className="w-11 h-11 rounded-xl bg-[#ff9900]/10 border border-[#ff9900]/20 flex items-center justify-center text-[#ff9900]">
+              <IconHeart size={22} className="fill-[#ff9900]" />
             </span>
             My Favorites
           </h1>

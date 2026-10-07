@@ -277,7 +277,7 @@ export default function HomePage() {
 
           {/* Hero Banner */}
           {hero ? (
-            <Link href={`/watch/${hero.vkey}`} prefetch={false} className="fade-in group relative block rounded-2xl overflow-hidden ring-1 ring-white/10">
+            <Link href={`/watch/${hero.vkey}`} prefetch={false} className="fade-in group relative block rounded-2xl overflow-hidden ring-1 ring-white/10 hover:ring-[#ff9900]/40 transition-all duration-500 hover:shadow-[0_20px_60px_-15px_rgba(255,153,0,0.3)]">
               <div className="relative aspect-[16/9] sm:aspect-[21/8] min-h-[190px] md:min-h-[300px]">
                 <img
                   src={hero.thumbnail}
@@ -285,19 +285,27 @@ export default function HomePage() {
                   fetchPriority="high"
                   loading="eager"
                   decoding="async"
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-[1.04]"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/55 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent" />
+                {/* Center play button */}
+                <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+                  <div className="w-20 h-20 rounded-full bg-[#ff9900]/95 flex items-center justify-center shadow-[0_0_50px_rgba(255,153,0,0.6)] scale-90 group-hover:scale-100 transition-transform duration-500">
+                    <svg className="w-9 h-9 ml-1 fill-black" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                </div>
                 <div className="absolute bottom-0 left-0 p-4 md:p-8 max-w-2xl">
-                  <span className="inline-flex items-center gap-1.5 bg-[#ff9900] text-black text-[11px] font-black px-2.5 py-1 rounded-md mb-2 md:mb-3 uppercase tracking-wide">
+                  <span className="inline-flex items-center gap-1.5 bg-[#ff9900] text-black text-[11px] font-black px-2.5 py-1 rounded-lg mb-2 md:mb-3 uppercase tracking-wider shadow-lg">
                     <IconFlame size={13} /> Featured Today • Daily Fresh Pick
                   </span>
-                  <h1 className="clamp-2 text-lg sm:text-2xl md:text-3xl font-black text-white leading-tight mb-2 group-hover:text-[#ff9900] transition-colors">{hero.title}</h1>
-                  <div className="flex items-center gap-4 text-sm text-neutral-300">
-                    {hero.duration && <span className="bg-white/10 px-2 py-0.5 rounded text-[13px]">{hero.duration !== '0:00' && hero.duration !== '0' ? hero.duration : '--:--'}</span>}
-                    {hero.views && <span>{hero.views}</span>}
-                    <span className="hidden sm:inline text-[#ff9900] font-semibold items-center gap-1">Watch now <IconChevronR size={16} /></span>
+                  <h1 className="clamp-2 text-lg sm:text-2xl md:text-[2rem] font-black text-white leading-[1.15] mb-2.5 group-hover:text-[#ff9900] transition-colors duration-300 drop-shadow-lg">{hero.title}</h1>
+                  <div className="flex items-center gap-3 text-sm text-neutral-300">
+                    {hero.duration && <span className="bg-white/10 backdrop-blur-sm px-2 py-0.5 rounded-md text-[13px] font-medium">{hero.duration !== '0:00' && hero.duration !== '0' ? hero.duration : '--:--'}</span>}
+                    {hero.views && <span className="text-neutral-400">{hero.views}</span>}
+                    <span className="hidden sm:inline-flex text-[#ff9900] font-semibold items-center gap-1 group-hover:gap-2 transition-all">Watch now <IconChevronR size={16} /></span>
                   </div>
                 </div>
               </div>
@@ -337,10 +345,12 @@ export default function HomePage() {
 
           {/* Continue Watching History Shelf */}
           {history.length > 0 && (
-            <section className="mt-8 p-5 rounded-2xl bg-gradient-to-r from-[#141414] to-[#0a0a0a] border border-[#222] shadow-xl">
+            <section className="mt-8 p-5 rounded-2xl bg-gradient-to-br from-[#161616] via-[#111111] to-[#0a0a0a] border border-white/[0.06] shadow-2xl">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  <IconHistory size={20} className="text-[#ff9900]" />
+                <h2 className="flex items-center gap-2.5 text-lg font-extrabold text-white tracking-tight">
+                  <span className="w-9 h-9 rounded-xl bg-[#ff9900]/10 border border-[#ff9900]/20 flex items-center justify-center text-[#ff9900]">
+                    <IconHistory size={18} />
+                  </span>
                   Continue Watching
                 </h2>
                 <button
@@ -439,12 +449,14 @@ export default function HomePage() {
           {/* New from your subscriptions */}
           {subsRail.length > 0 && (
             <section className="mt-8 content-auto">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  <IconBell size={20} className="text-[#ff9900]" />
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="flex items-center gap-2.5 text-xl md:text-2xl font-extrabold text-white tracking-tight">
+                  <span className="w-9 h-9 rounded-xl bg-[#ff9900]/10 border border-[#ff9900]/20 flex items-center justify-center text-[#ff9900]">
+                    <IconBell size={18} />
+                  </span>
                   New from your subscriptions
                 </h2>
-                <Link href="/subscriptions" className="text-sm font-semibold text-[#ff9900] hover:text-[#ffb340] flex items-center gap-1 transition-colors">
+                <Link href="/subscriptions" className="text-sm font-semibold text-neutral-400 hover:text-[#ff9900] flex items-center gap-1 transition-colors shrink-0">
                   View all <IconChevronR size={16} />
                 </Link>
               </div>
@@ -462,19 +474,7 @@ export default function HomePage() {
           <div className="mt-10 space-y-14">
             {/* 1. Today's Fresh Releases */}
             <section>
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-[#ff9900]"><IconSparkles size={24} /></span>
-                  <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
-                    <span>Today&apos;s Fresh Releases</span>
-                  </h2>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Link href="/list/newest" className="text-sm font-semibold text-[#ff9900] hover:text-[#ffb340] flex items-center gap-1 transition-colors">
-                    View all <IconChevronR size={16} />
-                  </Link>
-                </div>
-              </div>
+              <SectionHeader title="Today's Fresh Releases" href="/list/newest" icon={IconSparkles} />
               {!home ? <VideoGridSkeleton n={15} className={gridClass} /> : (
                 <div className={gridClass}>
                   {recommended.map((v, i) => <VideoCard key={v.vkey || i} v={v} index={i} />)}

@@ -231,7 +231,7 @@ export default function VideoCard({ v, index = 0 }) {
       style={{ animationDelay: `${Math.min(index, 24) * 35}ms` }}
     >
       <div
-        className="shine-hover relative aspect-video rounded-xl overflow-hidden bg-[#141414] ring-1 ring-white/5 group-hover:ring-[#ff9900]/60 transition-all duration-300"
+        className="shine-hover relative aspect-video rounded-xl overflow-hidden bg-[#141414] ring-1 ring-white/[0.06] group-hover:ring-[#ff9900]/50 group-hover:shadow-[0_8px_30px_-6px_rgba(255,153,0,0.25)] transition-all duration-300"
       >
         {imgFailed ? (
           <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#181818] to-[#0c0c0c] text-[#ff9900] select-none">
@@ -256,7 +256,16 @@ export default function VideoCard({ v, index = 0 }) {
           />
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+        {/* Centered play affordance on hover (desktop) */}
+        <div className="absolute inset-0 hidden [@media(hover:hover)]:flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none z-10">
+          <div className="w-14 h-14 rounded-full bg-[#ff9900] flex items-center justify-center shadow-[0_0_30px_rgba(255,153,0,0.5)]">
+            <svg className="w-6 h-6 ml-1 fill-black" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
 
         {/* Watch progress bar (from Continue Watching history) */}
         {(() => {
@@ -326,11 +335,11 @@ export default function VideoCard({ v, index = 0 }) {
         </button>
 
         {v.duration ? (
-          <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[11px] font-semibold px-1.5 py-0.5 rounded z-10">
+          <span className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-[11px] font-semibold px-1.5 py-0.5 rounded-md z-10">
             {v.duration !== '0:00' && v.duration !== '0' ? v.duration : '--:--'}
           </span>
         ) : (
-          <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[11px] font-semibold px-1.5 py-0.5 rounded z-10">
+          <span className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-[11px] font-semibold px-1.5 py-0.5 rounded-md z-10">
             --:--
           </span>
         )}
@@ -348,14 +357,14 @@ export default function VideoCard({ v, index = 0 }) {
         )}
       </div>
 
-      <h3 className="clamp-2 mt-2.5 text-[14px] leading-snug font-medium text-neutral-100 group-hover:text-[#ff9900] transition-colors min-h-[2.6em]">
+      <h3 className="clamp-2 mt-2.5 text-[14px] leading-[1.35] font-medium text-neutral-100 group-hover:text-[#ff9900] transition-colors duration-200 min-h-[2.6em]">
         {v.title}
       </h3>
 
-      <div className="mt-1 flex items-center gap-2 text-[12px] text-neutral-500">
+      <div className="mt-1.5 flex items-center gap-2.5 text-[12px] text-neutral-500">
         {v.views && (
-          <span className="flex items-center gap-1">
-            <IconEye size={13} />
+          <span className="flex items-center gap-1.5">
+            <IconEye size={13} className="text-neutral-600" />
             {formatCount(v.views)}
           </span>
         )}

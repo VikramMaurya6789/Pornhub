@@ -106,16 +106,16 @@ export default async function PornstarPage({ params, searchParams }) {
       </div>
 
       {/* Profile Header */}
-      <div className="mb-8 p-6 md:p-8 rounded-2xl bg-gradient-to-r from-[#181818] via-[#141414] to-[#0f0f0f] border border-[#262626] shadow-2xl flex flex-col sm:flex-row items-center sm:items-start gap-6">
+      <div className="mb-8 p-6 md:p-8 rounded-2xl bg-gradient-to-br from-[#1b1b1b] via-[#131313] to-[#0c0c0c] border border-white/[0.06] shadow-2xl flex flex-col sm:flex-row items-center sm:items-start gap-6">
         <div className="relative shrink-0">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden ring-3 ring-[#ff9900]/70 bg-[#222] shadow-xl shadow-[#ff9900]/15 flex items-center justify-center">
+          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden ring-[3px] ring-[#ff9900] ring-offset-4 ring-offset-[#0a0a0a] bg-[#222] shadow-[0_0_40px_rgba(255,153,0,0.25)] flex items-center justify-center">
             <PornstarAvatar
               avatar={avatar}
               fallbackAvatar={fallbackAvatar}
               name={name}
             />
           </div>
-          <div className="absolute -bottom-1 -right-1 bg-[#ff9900] text-black p-1.5 rounded-full shadow-md">
+          <div className="absolute -bottom-1 -right-1 bg-[#ff9900] text-black p-1.5 rounded-full shadow-lg">
             <IconStar size={14} className="fill-black" />
           </div>
         </div>
@@ -125,20 +125,20 @@ export default async function PornstarPage({ params, searchParams }) {
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight">
               {name}
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#ff9900]/15 text-[#ff9900] border border-[#ff9900]/30">
-              Verified Pornstar
+            <span className="px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#ff9900] text-black shadow-md">
+              Verified
             </span>
             <FollowPornstarButton slug={slug} name={name} avatar={avatar} />
           </div>
-          <p className="mt-2 text-sm text-neutral-400 max-w-2xl">
+          <p className="mt-2.5 text-sm text-neutral-400 max-w-2xl leading-relaxed">
             Watch full 1080p HD videos starring {name}. Stream all exclusive scenes and latest releases in high definition with zero ads.
           </p>
-          <div className="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs font-semibold text-neutral-300">
-            <div className="flex items-center gap-1.5 bg-[#202020] px-3 py-1.5 rounded-lg border border-[#2d2d2d]">
+          <div className="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-2.5 text-xs font-semibold text-neutral-300">
+            <div className="flex items-center gap-1.5 bg-white/[0.04] px-3 py-1.5 rounded-lg border border-white/[0.06]">
               <IconFlame size={14} className="text-[#ff9900]" />
               <span>{videos.length ? `${videos.length}+ Videos on page` : 'Full HD Collection'}</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-[#202020] px-3 py-1.5 rounded-lg border border-[#2d2d2d]">
+            <div className="flex items-center gap-1.5 bg-white/[0.04] px-3 py-1.5 rounded-lg border border-white/[0.06]">
               <span className="text-[#ff9900]">Page {page}</span>
             </div>
           </div>

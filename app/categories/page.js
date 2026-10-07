@@ -22,8 +22,11 @@ export default function CategoriesPage() {
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 py-6">
-      <h1 className="fade-in text-xl md:text-2xl font-bold text-white flex items-center gap-2.5 mb-6">
-        <IconGrid size={22} className="text-[#ff9900]" /> Categories
+      <h1 className="fade-in flex items-center gap-2.5 text-xl md:text-2xl font-extrabold text-white tracking-tight mb-6">
+        <span className="w-9 h-9 rounded-xl bg-[#ff9900]/10 border border-[#ff9900]/20 flex items-center justify-center text-[#ff9900]">
+          <IconGrid size={18} />
+        </span>
+        Categories
       </h1>
       {err && <p className="text-red-400 text-sm">Failed to load: {err}</p>}
       {!cats && !err ? (

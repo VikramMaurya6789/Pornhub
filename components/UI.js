@@ -37,14 +37,18 @@ export default function Pagination({ page, base, extra = '' }) {
 
 export function SectionHeader({ title, href, icon: Icon }) {
   return (
-    <div className="flex items-center justify-between mb-5">
-      <h2 className="flex items-center gap-2.5 text-xl md:text-2xl font-bold text-white">
-        {Icon && <span className="text-[#ff9900]"><Icon size={24} /></span>}
+    <div className="flex items-center justify-between mb-5 group/head">
+      <h2 className="flex items-center gap-2.5 text-xl md:text-2xl font-extrabold text-white tracking-tight">
+        {Icon && (
+          <span className="w-9 h-9 rounded-xl bg-[#ff9900]/10 border border-[#ff9900]/20 flex items-center justify-center text-[#ff9900] group-hover/head:bg-[#ff9900] group-hover/head:text-black transition-colors duration-300">
+            <Icon size={18} />
+          </span>
+        )}
         {title}
       </h2>
       {href && (
-        <Link href={href} className="text-sm font-semibold text-[#ff9900] hover:text-[#ffb340] flex items-center gap-1 transition-colors">
-          View all <IconChevronR size={16} />
+        <Link href={href} className="text-sm font-semibold text-neutral-400 hover:text-[#ff9900] flex items-center gap-1 transition-colors shrink-0">
+          View all <IconChevronR size={16} className="transition-transform group-hover/head:translate-x-0.5" />
         </Link>
       )}
     </div>

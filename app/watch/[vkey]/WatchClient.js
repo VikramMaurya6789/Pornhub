@@ -969,17 +969,17 @@ function WatchContent() {
         <div className={`min-w-0 ${theaterMode ? 'lg:col-start-1 lg:row-start-2 lg:col-span-1' : 'lg:col-start-1 lg:row-start-2 lg:col-span-1'}`}>
           {v && (
             <div className="fade-in">
-              <h1 className="text-lg md:text-2xl font-bold text-white mt-1 leading-snug">{v.title}</h1>
+              <h1 className="text-lg md:text-[1.65rem] font-extrabold text-white mt-1 leading-[1.25] tracking-tight">{v.title}</h1>
 
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 text-sm text-neutral-400">
                 {(liveViews !== null || v.views) && (
                   <span className="flex items-center gap-1.5">
-                    <IconEye size={16} />
+                    <IconEye size={16} className="text-neutral-500" />
                     {formatMaxViews(v.views, liveViews)}
                   </span>
                 )}
-                {v.percent !== null && <span className="text-[#ff9900] font-bold">{v.percent}% liked</span>}
-                {v.duration && <span className="flex items-center gap-1.5"><IconClock size={16} />{v.duration !== '0:00' && v.duration !== '0' ? v.duration : '--:--'}</span>}
+                {v.percent !== null && <span className="text-[#ff9900] font-bold bg-[#ff9900]/10 px-2 py-0.5 rounded-md text-[13px]">{v.percent}% liked</span>}
+                {v.duration && <span className="flex items-center gap-1.5"><IconClock size={16} className="text-neutral-500" />{v.duration !== '0:00' && v.duration !== '0' ? v.duration : '--:--'}</span>}
                 {Boolean(
                   (v.uploadDate || v.added) &&
                   typeof (v.uploadDate || v.added) === 'string' &&
@@ -1702,9 +1702,9 @@ function WatchContent() {
         <aside className={`min-w-0 self-start ${theaterMode ? 'lg:col-start-2 lg:row-start-2 lg:col-span-1' : 'lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:col-span-1'}`}>
           {/* More from this uploader block */}
           {v && (v.authorUrl || v.author) && (
-            <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-[#181818] to-[#121212] border border-[#262626] shadow-md flex items-center justify-between gap-3">
+            <div className="mb-6 p-4 rounded-2xl bg-gradient-to-br from-[#1a1a1a] to-[#101010] border border-white/[0.06] shadow-xl flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-11 h-11 rounded-full overflow-hidden bg-[#222] ring-2 ring-[#ff9900]/40 shrink-0">
+                <div className="w-11 h-11 rounded-full overflow-hidden bg-[#222] ring-2 ring-[#ff9900]/50 ring-offset-2 ring-offset-[#0a0a0a] shrink-0">
                   <img
                     src={v.authorAvatar || `/api/avatar?name=${encodeURIComponent(v.author || 'Creator')}`}
                     alt=""
@@ -1715,7 +1715,7 @@ function WatchContent() {
                   />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] text-neutral-400 font-bold uppercase tracking-wider">Creator</p>
+                  <p className="text-[10px] text-[#ff9900] font-bold uppercase tracking-widest">Creator</p>
                   <p className="text-sm font-bold text-white truncate">{v.author}</p>
                 </div>
               </div>
@@ -1727,7 +1727,7 @@ function WatchContent() {
                         : `/uploader${v.authorUrl.startsWith('/') ? '' : '/'}${v.authorUrl}`)
                     : `/pornstar/${v.author.toLowerCase().replace(/[^a-z0-9_-]/g, '-')}`
                 }
-                className="px-3.5 py-1.5 rounded-lg bg-[#ff9900] hover:bg-[#e68a00] text-black text-xs font-bold transition-all shadow shrink-0"
+                className="px-4 py-2 rounded-xl bg-[#ff9900] hover:bg-[#ffb340] text-black text-xs font-black transition-all shadow-[0_4px_15px_rgba(255,153,0,0.3)] hover:shadow-[0_4px_20px_rgba(255,153,0,0.5)] shrink-0"
               >
                 More Videos
               </Link>
@@ -1735,8 +1735,11 @@ function WatchContent() {
           )}
 
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              Related videos <IconChevronR size={18} className="text-[#ff9900]" />
+            <h2 className="flex items-center gap-2.5 text-lg font-extrabold text-white tracking-tight">
+              <span className="w-8 h-8 rounded-lg bg-[#ff9900]/10 border border-[#ff9900]/20 flex items-center justify-center text-[#ff9900]">
+                <IconChevronR size={16} />
+              </span>
+              Related videos
             </h2>
             <div className="flex items-center gap-1.5 text-xs text-neutral-400">
               <span>Autoplay</span>
