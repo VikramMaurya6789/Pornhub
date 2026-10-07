@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import scraper from '../../../lib/scraper.js';
-import { curlText } from '../../../lib/cdn.js';
+import { curlStream, curlText } from '../../../lib/cdn.js';
+import { Readable } from 'stream';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -125,14 +126,57 @@ export async function GET(req) {
       );
     }
 
-    // For HLS: redirect to the variant playlist (browser/VLC handles it)
-    // For MP4: redirect directly to upstream (bypasses Vercel timeout for large files)
+    // Proxy the file (redirect doesn't work - upstream blocks direct browser access)
+    // Fresh URL is fetched above (force refresh) so it won't be expired.
     const format = searchParams.get('format') || 'mp4';
     const hlsurl = searchParams.get('hlsurl');
 
     if (format === 'hls' && hlsurl) {
-      // Redirect to HLS variant - VLC/MX Player can play/download it
-      return NextResponse.redirect(hlsurl, { headers: CORS_HEADERS });
+      // For HLS: proxy the playlist with rewritten segment URLs
+      let res;
+      try {
+        res = await curlStream(hlsurl, null);
+      } catch (e) {
+        return NextResponse.json({ error: 'Download failed: ' + e.message }, { status: 502, headers: CORS_HEADERS });
+      }
+      const { status, headers, webStream, stream, buffer } = res;
+      const safeTitle = (info?.title || vkey).replace(/[^a-z0-9-_ ]/gi, '_').slice(0, 60);
+      const qLabel = /^\d+$/.test(quality) ? `${quality}p` : 'HD';
+      const filename = `${safeTitle}_${qLabel}.m3u8`;
+      let playlistText = '';
+      try {
+        if (buffer) playlistText = Buffer.from(buffer).toString('utf8');
+      } catch {}
+      if (playlistText && playlistText.includes('#EXTM3U')) {
+        const lines = playlistText.split('\n');
+        const rewritten = lines.map((line) => {
+          const t = line.trim();
+          if (t && !t.startsWith('#')) {
+            try {
+              const abs = new URL(t, hlsurl).toString();
+              return `/api/seg?u=${encodeURIComponent(abs)}`;
+            } catch { return line; }
+          }
+          return line;
+        });
+        return new NextResponse(rewritten.join('\n'), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/vnd.apple.mpegurl',
+            'Content-Disposition': `attachment; filename="${filename}"`,
+            ...CORS_HEADERS,
+          },
+        });
+      }
+      const body = webStream || (buffer ? new Uint8Array(buffer) : (stream ? Readable.toWeb(stream) : null));
+      return new NextResponse(body, {
+        status,
+        headers: {
+          'Content-Type': 'application/vnd.apple.mpegurl',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          ...CORS_HEADERS,
+        },
+      });
     }
 
     const match = downloads.find((d) => String(d.quality) === String(quality)) || downloads[0];
@@ -140,9 +184,31 @@ export async function GET(req) {
       return NextResponse.json({ error: 'Download not available for this quality' }, { status: 404, headers: CORS_HEADERS });
     }
 
-    // Redirect to upstream MP4 (avoids Vercel serverless timeout on large files)
-    // The browser downloads directly from the CDN - full file, no interruption.
-    return NextResponse.redirect(match.url, { headers: CORS_HEADERS });
+    // Proxy the MP4 with fresh URL (force refresh above ensures it's not expired)
+    const range = req.headers.get('range');
+    let res;
+    try {
+      res = await curlStream(match.url, range);
+    } catch (e) {
+      return NextResponse.json({ error: 'Download failed: ' + e.message }, { status: 502, headers: CORS_HEADERS });
+    }
+    const { status, headers, webStream, stream, buffer } = res;
+    if (!webStream && !stream && !buffer) {
+      return NextResponse.json({ error: 'Download failed upstream' }, { status: 502, headers: CORS_HEADERS });
+    }
+    const safeTitle = (info?.title || vkey).replace(/[^a-z0-9-_ ]/gi, '_').slice(0, 60);
+    const qLabel = /^\d+$/.test(match.quality) ? `${match.quality}p` : 'HD';
+    const filename = `${safeTitle}_${qLabel}.mp4`;
+    const outHeaders = {
+      'Content-Type': 'video/mp4',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Accept-Ranges': 'bytes',
+      ...CORS_HEADERS,
+    };
+    if (headers['content-length']) outHeaders['Content-Length'] = headers['content-length'];
+    if (headers['content-range']) outHeaders['Content-Range'] = headers['content-range'];
+    const body = webStream || (buffer ? new Uint8Array(buffer) : (stream ? Readable.toWeb(stream) : null));
+    return new NextResponse(body, { status, headers: outHeaders });
   } catch (e) {
     return NextResponse.json({ error: e.message || 'download failed' }, { status: 500, headers: CORS_HEADERS });
   }
