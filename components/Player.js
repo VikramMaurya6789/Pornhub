@@ -2524,7 +2524,7 @@ export default function Player({
           className="control-bar flex items-center justify-between gap-1 sm:gap-2 text-white text-sm select-none pointer-events-auto"
           onPointerDownCapture={resetControlsTimeout}
         >
-          <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-3 min-w-0 flex-1">
             {/* Play / Pause Button */}
             <button
               type="button"
@@ -2587,7 +2587,7 @@ export default function Player({
             </span>
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-2.5">
+          <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
             {/* Loop Single Video Button */}
             <button
               type="button"
