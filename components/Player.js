@@ -101,7 +101,6 @@ export default function Player({
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showQualityMenu, setShowQualityMenu] = useState(false); // Dedicated clean quality sheet (Pornhub-style)
   const [contextMenu, setContextMenu] = useState(null); // {x, y} for right-click menu
-  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [isAutoplay, setIsAutoplay] = useState(() => {
     if (typeof localStorage !== 'undefined') {
@@ -1107,7 +1106,7 @@ export default function Player({
       const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
       const delay = isTouch ? 8000 : 5000;
       controlsTimeoutRef.current = setTimeout(() => {
-        if (!showSettingsMenu && !showQualityMenu && !showSpeedMenu && !showShortcuts && !isSeekingRef.current && !isUserSeekingRef.current) {
+        if (!showSettingsMenu && !showQualityMenu && !showShortcuts && !isSeekingRef.current && !isUserSeekingRef.current) {
           setShowControls(false);
         } else {
           // User is busy (seeking/menu) — retry hiding after the delay.
@@ -1115,7 +1114,7 @@ export default function Player({
         }
       }, delay);
     }
-  }, [isPlaying, showSettingsMenu, showQualityMenu, showSpeedMenu, showShortcuts]);
+  }, [isPlaying, showSettingsMenu, showQualityMenu, showShortcuts]);
 
   const handleMouseMove = () => {
     resetControlsTimeout();
@@ -1123,26 +1122,24 @@ export default function Player({
 
   // Close menus when clicking outside cleanly using pointerdown
   useEffect(() => {
-    if (!showSettingsMenu && !showQualityMenu && !showSpeedMenu && !showQueue && !contextMenu) return;
+    if (!showSettingsMenu && !showQualityMenu && !showQueue && !contextMenu) return;
     const handleOutsideClick = (e) => {
       if (
         e.target &&
         e.target.closest &&
         !e.target.closest('.settings-menu-container') &&
         !e.target.closest('.quality-menu-container') &&
-        !e.target.closest('.speed-menu-container') &&
-        !e.target.closest('.queue-panel-container') &&
+                !e.target.closest('.queue-panel-container') &&
         !e.target.closest('.player-context-menu')
       ) {
         setShowSettingsMenu(false);
-        setShowSpeedMenu(false);
         setShowQueue(false);
         setContextMenu(null);
       }
     };
     document.addEventListener('pointerdown', handleOutsideClick);
     return () => document.removeEventListener('pointerdown', handleOutsideClick);
-  }, [showSettingsMenu, showSpeedMenu, showQueue]);
+  }, [showSettingsMenu, showQualityMenu, showQueue]);
 
   // Buffer stall recovery watchdog (gently nudges forward without destroying HLS instance)
   useEffect(() => {
@@ -1214,7 +1211,7 @@ export default function Player({
       e.target &&
       e.target.closest &&
       e.target.closest(
-        'button, input, select, a, .control-bar, .scrubber-bar, .settings-menu-container, .speed-menu-container, [data-interactive="true"]'
+        'button, input, select, a, .control-bar, .scrubber-bar, .settings-menu-container, .quality-menu-container, [data-interactive="true"]'
       )
     ) {
       return;
@@ -1222,10 +1219,9 @@ export default function Player({
     if (isTouchInteractionRef.current) {
       return;
     }
-    if (showSettingsMenu || showQualityMenu || showSpeedMenu || showShortcuts) {
+    if (showSettingsMenu || showQualityMenu || showShortcuts) {
       setShowSettingsMenu(false);
       setShowQualityMenu(false);
-      setShowSpeedMenu(false);
       setShowShortcuts(false);
       return;
     }
@@ -1326,7 +1322,6 @@ export default function Player({
 
   const updatePlaybackRate = (rate) => {
     setPlaybackRate(rate);
-    setShowSpeedMenu(false);
     setShowSettingsMenu(false);
     try {
       localStorage.setItem('oh_rate', String(rate));
@@ -1721,7 +1716,6 @@ export default function Player({
           break;
         case 'escape':
           setShowSettingsMenu(false);
-          setShowSpeedMenu(false);
           setShowShortcuts(false);
           setShowQueue(false);
           setContextMenu(null);
@@ -1771,7 +1765,7 @@ export default function Player({
       return;
     }
     // Ignore touches on interactive buttons, inputs, menus, and scrubber
-    if (e.target && e.target.closest && e.target.closest('button, input, a, [role="button"], .control-bar, .scrubber-bar, [data-interactive="true"]')) {
+    if (e.target && e.target.closest && e.target.closest('button, input, a, [role="button"], .control-bar, .scrubber-bar, .quality-menu-container, [data-interactive="true"]')) {
       return;
     }
 
@@ -1837,7 +1831,7 @@ export default function Player({
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const INTERACTIVE_SEL = 'button, input, a, [role="button"], .control-bar, .scrubber-bar, [data-interactive="true"]';
+    const INTERACTIVE_SEL = 'button, input, a, [role="button"], .control-bar, .scrubber-bar, .quality-menu-container, [data-interactive="true"]';
     const isInteractive = (t) => !!(t && t.closest && t.closest(INTERACTIVE_SEL));
 
     const onTS = (e) => {
@@ -2166,7 +2160,7 @@ export default function Player({
       onMouseLeave={() => {
         playerHoverRef.current = false;
         // Don't yank controls (and open menus) away while a menu is open
-        if (isPlaying && !showSettingsMenu && !showQualityMenu && !showSpeedMenu && !showQueue && !showShortcuts) setShowControls(false);
+        if (isPlaying && !showSettingsMenu && !showQualityMenu && !showQueue && !showShortcuts) setShowControls(false);
       }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
@@ -2471,7 +2465,7 @@ export default function Player({
       {/* Bottom Floating Control Bar */}
       <div
         className={`absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/85 to-transparent px-2 sm:px-4 pt-8 pb-safe flex flex-col gap-2 transition-all duration-300 z-30 ${
-          showControls || !isPlaying || showSettingsMenu || showQualityMenu || showSpeedMenu
+          showControls || !isPlaying || showSettingsMenu || showQualityMenu
             ? 'opacity-100 translate-y-0 pointer-events-auto visible'
             : 'opacity-0 translate-y-2 pointer-events-none invisible group-hover/player:opacity-100 group-hover/player:translate-y-0 group-hover/player:pointer-events-auto group-hover/player:visible'
         }`}
@@ -2613,7 +2607,6 @@ export default function Player({
                   e.stopPropagation();
                   haptic();
                   setShowQueue((s) => !s);
-                  setShowSpeedMenu(false);
                   setShowSettingsMenu(false);
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
@@ -2643,7 +2636,6 @@ export default function Player({
                   haptic();
                   setShowQualityMenu((prev) => !prev);
                   setShowSettingsMenu(false);
-                  setShowSpeedMenu(false);
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
                 aria-label="Video quality"
@@ -2708,7 +2700,6 @@ export default function Player({
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowSettingsMenu((prev) => !prev);
-                  setShowSpeedMenu(false);
                   setShowQualityMenu(false);
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
@@ -2720,12 +2711,19 @@ export default function Player({
               </button>
 
               {showSettingsMenu && (
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  className="fixed inset-x-3 bottom-28 z-50 lg:absolute lg:inset-x-auto lg:right-0 lg:bottom-12 lg:z-50 bg-[#141414] border border-[#2a2a2a] rounded-2xl p-1.5 shadow-2xl min-w-[145px] max-h-[62vh] overflow-y-auto flex flex-col gap-1 backdrop-blur-md pointer-events-auto"
-                >
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-40 bg-black/60 sm:hidden"
+                    onClick={(e) => { e.stopPropagation(); setShowSettingsMenu(false); }}
+                  />
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="fixed inset-x-0 bottom-0 z-50 sm:absolute sm:inset-x-auto sm:right-0 sm:bottom-12 sm:z-50 bg-[#141414] border-t sm:border border-[#2a2a2a] rounded-t-3xl sm:rounded-2xl p-3 pb-8 shadow-2xl w-auto sm:min-w-[220px] max-h-[62vh] overflow-y-auto flex flex-col gap-1 backdrop-blur-md pointer-events-auto"
+                  >
+                    <div className="w-10 h-1 bg-[#444] rounded-full mx-auto mb-2 sm:hidden" />
                   {/* Mobile-only: Loop toggle (hidden from control bar on small screens to prevent overflow) */}
                   <button
                     type="button"
@@ -2837,7 +2835,8 @@ export default function Player({
                       </button>
                     ))}
                   </div>
-                </div>
+                  </div>
+                </>
               )}
             </div>
 
