@@ -1308,7 +1308,9 @@ function WatchContent() {
                                 <IconDownload size={16} />
                               </span>
                               <span>
-                                <span className="block text-sm font-bold">{dq.quality}p HD</span>
+                                <span className="block text-sm font-bold">
+                                  {/^\d+$/.test(dq.quality) ? `${dq.quality}p HD` : 'HD Video'}
+                                </span>
                                 <span className="block text-xs text-neutral-500 group-hover:text-black/60">MP4 video file</span>
                               </span>
                             </span>
