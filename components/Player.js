@@ -2701,15 +2701,22 @@ export default function Player({
 
               {/* Pornhub-style clean quality bottom sheet — only quality options, fits screen */}
               {showQualityMenu && (
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  className="fixed inset-x-4 bottom-24 z-50 sm:absolute sm:inset-x-auto sm:right-0 sm:bottom-12 sm:z-50 bg-[#1a1a1a] border border-[#2e2e2e] rounded-2xl p-2 shadow-2xl w-auto sm:min-w-[180px] max-h-[50vh] overflow-y-auto backdrop-blur-md pointer-events-auto"
-                >
-                  <div className="px-3 pt-1.5 pb-2 text-[11px] uppercase font-bold tracking-widest text-neutral-400 text-center">
-                    Quality
-                  </div>
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-40 bg-black/60 sm:hidden"
+                    onClick={(e) => { e.stopPropagation(); setShowQualityMenu(false); }}
+                  />
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="fixed inset-x-0 bottom-0 z-50 sm:absolute sm:inset-x-auto sm:right-0 sm:bottom-12 sm:z-50 bg-[#1a1a1a] border-t sm:border border-[#2e2e2e] rounded-t-3xl sm:rounded-2xl p-3 pb-8 shadow-2xl w-auto sm:min-w-[200px] max-h-[60vh] overflow-y-auto backdrop-blur-md pointer-events-auto"
+                  >
+                    <div className="w-10 h-1 bg-[#444] rounded-full mx-auto mb-3 sm:hidden" />
+                    <div className="px-3 pt-1 pb-2 text-[11px] uppercase font-bold tracking-widest text-neutral-400 text-center">
+                      Quality
+                    </div>
                   <button
                     type="button"
                     onClick={() => { haptic(); updateQuality('auto'); setShowQualityMenu(false); }}
@@ -2736,6 +2743,7 @@ export default function Player({
                     </button>
                   ))}
                 </div>
+                </>
               )}
             </div>
 
