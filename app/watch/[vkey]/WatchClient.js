@@ -1309,9 +1309,14 @@ function WatchContent() {
                               </span>
                               <span>
                                 <span className="block text-sm font-bold">
-                                  {/^\d+$/.test(dq.quality) ? `${dq.quality}p HD` : 'HD Video'}
+                                  {/^\d+$/.test(dq.quality) ? `${dq.quality}p` : 'HD Video'}
+                                  <span className="ml-1.5 text-[10px] font-black px-1.5 py-0.5 rounded bg-[#ff9900]/20 text-[#ff9900] group-hover:bg-black/20 group-hover:text-black uppercase">
+                                    {dq.format === 'hls' ? 'HLS' : 'MP4'}
+                                  </span>
                                 </span>
-                                <span className="block text-xs text-neutral-500 group-hover:text-black/60">MP4 video file</span>
+                                <span className="block text-xs text-neutral-500 group-hover:text-black/60">
+                                  {dq.format === 'hls' ? 'Plays in VLC / MX Player' : 'MP4 video file'}
+                                </span>
                               </span>
                             </span>
                             <IconChevronR size={18} className="text-neutral-600 group-hover:text-black" />
