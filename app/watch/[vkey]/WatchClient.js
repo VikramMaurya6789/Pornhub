@@ -1082,7 +1082,6 @@ function WatchContent() {
                     <IconTheater size={16} />
                   </button>
                 </div>
-              </div>
 
               {/* Save to Playlist Modal */}
               {showPlaylistModal && (
