@@ -2692,11 +2692,10 @@ export default function Player({
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
                 aria-label="Video quality"
-                className="min-h-[44px] min-w-[44px] flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 text-white hover:text-[#ff9900] text-xs font-bold transition-colors cursor-pointer touch-manipulation pointer-events-auto"
+                className="min-h-[44px] flex items-center px-2 py-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 text-white hover:text-[#ff9900] text-[11px] font-bold transition-colors cursor-pointer touch-manipulation pointer-events-auto whitespace-nowrap"
                 title="Quality"
               >
-                <IconSettings size={15} className="sm:hidden" />
-                <span className="capitalize">{activeQualityLabel}</span>
+                <span className="capitalize">{quality === 'auto' ? `Auto` : `${quality}p`}</span>
               </button>
 
               {/* Pornhub-style clean quality bottom sheet — only quality options, fits screen */}
