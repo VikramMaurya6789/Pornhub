@@ -991,180 +991,77 @@ function WatchContent() {
                 )}
               </div>
 
-              {/* Action Buttons Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 mt-5 pb-5 border-b border-[#1f1f1f]">
-                <div className="flex flex-wrap items-center gap-3">
-                  {/* Like / Dislike */}
-                  <div className="flex rounded-full overflow-hidden ring-1 ring-[#2c2c2c]">
-                    <button onClick={() => doVote('up')}
-                      className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold transition-all ${vote === 'up' ? 'bg-[#ff9900] text-black shadow-lg shadow-[#ff9900]/25 heart-pop' : 'bg-[#1c1c1c] text-neutral-300 hover:bg-[#2a2a2a]'}`}>
-                      <IconThumbUp size={17} />{v.upVotes || 'Like'}
-                    </button>
-                    <button onClick={() => doVote('down')}
-                      className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold border-l border-[#2c2c2c] transition-all ${vote === 'down' ? 'bg-[#ff9900] text-black heart-pop' : 'bg-[#1c1c1c] text-neutral-300 hover:bg-[#2a2a2a]'}`}>
-                      <IconThumbDown size={17} />{v.downVotes || ''}
-                    </button>
-                  </div>
-
-                  {/* Save to Favorites */}
-                  <button onClick={toggleSave}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-full ring-1 text-sm font-bold transition-all ${saved ? 'bg-[#ff9900]/15 ring-[#ff9900] text-[#ff9900] heart-pop shadow-md shadow-[#ff9900]/20' : 'bg-[#1c1c1c] ring-[#2c2c2c] text-neutral-200 hover:bg-[#2a2a2a]'}`}>
-                    <IconHeart size={17} className={saved ? 'fill-[#ff9900]' : ''} />
-                    {saved ? 'Favorited' : 'Favorite'}
+              {/* Action Buttons Bar — Pornhub-style: compact horizontal scroll row */}
+              <div className="flex items-center gap-2 mt-4 pb-4 border-b border-[#1f1f1f] overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
+                {/* Like / Dislike */}
+                <div className="flex rounded-full overflow-hidden bg-[#1c1c1c] ring-1 ring-[#2c2c2c] shrink-0">
+                  <button onClick={() => doVote('up')}
+                    className={`flex items-center gap-1.5 px-4 py-2 text-[13px] font-bold transition-all ${vote === 'up' ? 'bg-[#ff9900] text-black' : 'text-neutral-200 hover:bg-[#2a2a2a]'}`}>
+                    <IconThumbUp size={16} />{v.upVotes || ''}
                   </button>
-
-                  {/* Save to Playlist */}
-                  <button
-                    onClick={openPlaylistModal}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-full ring-1 ring-[#2c2c2c] bg-[#1c1c1c] text-neutral-200 hover:bg-[#2a2a2a] text-sm font-bold transition-all"
-                    title="Save to Playlist"
-                  >
-                    <IconList size={17} />
-                    <span>Playlist</span>
+                  <button onClick={() => doVote('down')}
+                    className={`flex items-center gap-1.5 px-4 py-2 text-[13px] font-bold border-l border-[#2c2c2c] transition-all ${vote === 'down' ? 'bg-[#ff9900] text-black' : 'text-neutral-200 hover:bg-[#2a2a2a]'}`}>
+                    <IconThumbDown size={16} />{v.downVotes || ''}
                   </button>
-
-                  {/* Watch Later (one-tap) */}
-                  <button
-                    onClick={toggleWatchLater}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-full ring-1 text-sm font-bold transition-all ${watchLater ? 'bg-[#ff9900]/15 ring-[#ff9900] text-[#ff9900] shadow-md shadow-[#ff9900]/20' : 'bg-[#1c1c1c] ring-[#2c2c2c] text-neutral-200 hover:bg-[#2a2a2a]'}`}
-                    title={watchLater ? 'Remove from Watch Later' : 'Save to Watch Later'}
-                  >
-                    <IconClock size={17} />
-                    <span>{watchLater ? 'Saved' : 'Watch Later'}</span>
-                  </button>
-
-                  {/* Add to Up-Next Queue */}
-                  <button
-                    onClick={addCurrentToQueue}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-full ring-1 ring-[#2c2c2c] bg-[#1c1c1c] text-neutral-200 hover:bg-[#2a2a2a] text-sm font-bold transition-all"
-                    title="Add to up-next queue"
-                  >
-                    <IconPlayNext size={17} />
-                    <span>Queue</span>
-                  </button>
-
-                  {/* Report Video */}
-                  <button
-                    onClick={() => setShowReportModal(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-full ring-1 ring-[#2c2c2c] bg-[#1c1c1c] text-neutral-300 hover:text-white hover:bg-[#2a2a2a] text-sm font-bold transition-all"
-                    title="Report Video"
-                  >
-                    <IconFlag size={16} />
-                    <span>Report</span>
-                  </button>
-
-                  {/* Share Menu & Direct Social Buttons */}
-                  <div className="flex items-center gap-1.5">
-                    {/* Main Share Button with dropdown */}
-                    <div className="relative">
-                      <div className="flex rounded-full overflow-hidden ring-1 ring-[#2c2c2c] bg-[#1c1c1c]">
-                        <button
-                          onClick={() => copyShare(false)}
-                          className="flex items-center gap-2 px-3.5 py-2.5 text-sm font-bold text-neutral-200 hover:bg-[#2a2a2a] transition-colors"
-                        >
-                          <IconShare size={16} /> {copied ? 'Copied!' : 'Share'}
-                        </button>
-                        <button
-                          onClick={() => setShowShareMenu((s) => !s)}
-                          className="px-2 py-2.5 text-xs font-bold text-neutral-400 hover:text-[#ff9900] hover:bg-[#2a2a2a] border-l border-[#2c2c2c] transition-colors"
-                          title="Share Options"
-                        >
-                          ▾
-                        </button>
-                      </div>
-
-                      {showShareMenu && (
-                        <div className="absolute left-0 top-12 z-30 bg-[#161616] border border-[#2a2a2a] rounded-2xl p-1.5 shadow-2xl min-w-[230px] flex flex-col gap-1 backdrop-blur-md">
-                          <button
-                            onClick={() => copyShare(false)}
-                            className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-neutral-200 hover:bg-[#252525] transition-colors flex items-center justify-between"
-                          >
-                            <span>Copy Video Link</span>
-                            <IconShare size={13} className="text-neutral-500" />
-                          </button>
-                          <button
-                            onClick={() => copyShare(true)}
-                            className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-[#ff9900] hover:bg-[#252525] transition-colors flex items-center justify-between"
-                          >
-                            <span>Copy with Timestamp ({Math.round(playbackTime)}s)</span>
-                            <span className="font-mono text-[10px] bg-[#ff9900]/20 px-1 py-0.5 rounded text-[#ff9900]">?t={Math.round(playbackTime)}</span>
-                          </button>
-                          <div className="h-px bg-[#262626] my-1" />
-                          <button
-                            onClick={() => shareWhatsApp(false)}
-                            className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-emerald-400 hover:bg-[#252525] transition-colors flex items-center gap-2"
-                          >
-                            <IconWhatsApp size={15} />
-                            <span>Share on WhatsApp</span>
-                          </button>
-                          <button
-                            onClick={() => shareTelegram(false)}
-                            className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-sky-400 hover:bg-[#252525] transition-colors flex items-center gap-2"
-                          >
-                            <IconTelegram size={15} />
-                            <span>Share on Telegram</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setShowShareMenu(false);
-                              setShowQrModal(true);
-                            }}
-                            className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-neutral-200 hover:bg-[#252525] transition-colors flex items-center gap-2"
-                          >
-                            <IconQr size={15} className="text-[#ff9900]" />
-                            <span>Show QR Code</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              const origin = typeof window !== 'undefined' ? window.location.origin : 'https://orangehub.royalcloud.qzz.io';
-                              const embed = `<iframe src="${origin}/watch/${vkey}" width="640" height="360" frameborder="0" allowfullscreen></iframe>`;
-                              navigator.clipboard?.writeText(embed).then(() => {
-                                showToast('Embed code copied!');
-                              }).catch(() => {
-                                prompt('Copy embed code:', embed);
-                              });
-                              setShowShareMenu(false);
-                            }}
-                            className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-neutral-200 hover:bg-[#252525] transition-colors flex items-center justify-between"
-                          >
-                            <span>Copy Embed Code</span>
-                            <span className="font-mono text-[10px] bg-white/10 px-1 py-0.5 rounded text-neutral-400">&lt;iframe&gt;</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* WhatsApp Quick Share Button */}
-                    <button
-                      onClick={() => shareWhatsApp(false)}
-                      className="p-2.5 rounded-full ring-1 ring-[#2c2c2c] bg-[#1c1c1c] text-neutral-300 hover:text-emerald-400 hover:bg-[#2a2a2a] transition-all"
-                      title="Share on WhatsApp"
-                      aria-label="Share on WhatsApp"
-                    >
-                      <IconWhatsApp size={16} />
-                    </button>
-
-                    {/* Telegram Quick Share Button */}
-                    <button
-                      onClick={() => shareTelegram(false)}
-                      className="p-2.5 rounded-full ring-1 ring-[#2c2c2c] bg-[#1c1c1c] text-neutral-300 hover:text-sky-400 hover:bg-[#2a2a2a] transition-all"
-                      title="Share on Telegram"
-                      aria-label="Share on Telegram"
-                    >
-                      <IconTelegram size={16} />
-                    </button>
-
-                    {/* QR Code Quick Button */}
-                    <button
-                      onClick={() => setShowQrModal(true)}
-                      className="p-2.5 rounded-full ring-1 ring-[#2c2c2c] bg-[#1c1c1c] text-neutral-300 hover:text-[#ff9900] hover:bg-[#2a2a2a] transition-all"
-                      title="Show QR Code for Phone/TV"
-                      aria-label="QR Code"
-                    >
-                      <IconQr size={16} />
-                    </button>
-                  </div>
                 </div>
+
+                {/* Favorite */}
+                <button onClick={toggleSave}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold transition-all shrink-0 ${saved ? 'bg-[#ff9900] text-black' : 'bg-[#1c1c1c] ring-1 ring-[#2c2c2c] text-neutral-200 hover:bg-[#2a2a2a]'}`}>
+                  <IconHeart size={16} className={saved ? 'fill-black' : ''} />
+                  Favorite
+                </button>
+
+                {/* Playlist */}
+                <button
+                  onClick={openPlaylistModal}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#1c1c1c] ring-1 ring-[#2c2c2c] text-neutral-200 hover:bg-[#2a2a2a] text-[13px] font-bold transition-all shrink-0"
+                  title="Save to Playlist"
+                >
+                  <IconList size={16} />
+                  <span>Playlist</span>
+                </button>
+
+                {/* Watch Later */}
+                <button
+                  onClick={toggleWatchLater}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold transition-all shrink-0 ${watchLater ? 'bg-[#ff9900] text-black' : 'bg-[#1c1c1c] ring-1 ring-[#2c2c2c] text-neutral-200 hover:bg-[#2a2a2a]'}`}
+                  title={watchLater ? 'Remove from Watch Later' : 'Save to Watch Later'}
+                >
+                  <IconClock size={16} />
+                  <span>{watchLater ? 'Saved' : 'Watch Later'}</span>
+                </button>
+
+                {/* Queue */}
+                <button
+                  onClick={addCurrentToQueue}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#1c1c1c] ring-1 ring-[#2c2c2c] text-neutral-200 hover:bg-[#2a2a2a] text-[13px] font-bold transition-all shrink-0"
+                  title="Add to up-next queue"
+                >
+                  <IconPlayNext size={16} />
+                  <span>Queue</span>
+                </button>
+
+                {/* Share */}
+                <button
+                  onClick={() => copyShare(false)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#1c1c1c] ring-1 ring-[#2c2c2c] text-neutral-200 hover:bg-[#2a2a2a] text-[13px] font-bold transition-all shrink-0"
+                  title="Share Video"
+                >
+                  <IconShare size={16} />
+                  <span>{copied ? 'Copied!' : 'Share'}</span>
+                </button>
+
+                {/* Report */}
+                <button
+                  onClick={() => setShowReportModal(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#1c1c1c] ring-1 ring-[#2c2c2c] text-neutral-400 hover:text-white hover:bg-[#2a2a2a] text-[13px] font-bold transition-all shrink-0"
+                  title="Report Video"
+                >
+                  <IconFlag size={15} />
+                  <span>Report</span>
+                </button>
+              </div>
 
                 {/* Autoplay & Theater quick toggles */}
                 <div className="flex items-center gap-3">

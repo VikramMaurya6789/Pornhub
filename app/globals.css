@@ -280,3 +280,11 @@ button:active {
   }
 }
 
+/* Hide scrollbar for horizontal scroll rows (Pornhub-style action bar) */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
