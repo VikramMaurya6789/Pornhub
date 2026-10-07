@@ -2633,51 +2633,6 @@ export default function Player({
             </div>
 
             {/* Playback Speed Menu */}
-            <div className="relative speed-menu-container z-40 pointer-events-auto">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowSpeedMenu((prev) => !prev);
-                  setShowSettingsMenu(false);
-                }}
-                onPointerDown={(e) => e.stopPropagation()}
-                aria-label="Playback speed"
-                className="min-h-[44px] min-w-[44px] flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg hover:bg-white/10 active:bg-white/20 text-white hover:text-[#ff9900] text-[11px] sm:text-xs font-bold transition-colors cursor-pointer touch-manipulation pointer-events-auto"
-                title="Playback Speed"
-              >
-                <IconSpeed size={14} />
-                <span>{playbackRate}x</span>
-              </button>
-
-              {showSpeedMenu && (
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  className="fixed inset-x-3 bottom-28 z-50 lg:absolute lg:inset-x-auto lg:right-0 lg:bottom-12 lg:z-50 bg-[#141414] border border-[#2a2a2a] rounded-2xl p-1.5 shadow-2xl min-w-[120px] flex flex-col gap-1 backdrop-blur-md pointer-events-auto"
-                >
-                  <div className="px-2.5 py-1 text-[10px] uppercase font-bold text-neutral-500 border-b border-[#222]">
-                    Speed
-                  </div>
-                  {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
-                    <button
-                      key={rate}
-                      type="button"
-                      onClick={() => updatePlaybackRate(rate)}
-                      className={`w-full text-left min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-between touch-manipulation cursor-pointer pointer-events-auto ${
-                        playbackRate === rate
-                          ? 'bg-[#ff9900] text-black font-bold'
-                          : 'text-neutral-300 hover:text-white hover:bg-[#222]'
-                      }`}
-                    >
-                      <span>{rate}x</span>
-                      {playbackRate === rate && <IconCheck size={14} className="text-black stroke-[3]" />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
 
             {/* Quality Menu with >= 44px Touch Target */}
             <div className="relative quality-menu-container z-40 pointer-events-auto">
