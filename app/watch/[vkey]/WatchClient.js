@@ -11,7 +11,7 @@ import {
   IconTag, IconUser, IconBadgeCheck, IconChevronR, IconBookmark, IconCheck,
   IconBell, IconMessage, IconSend, IconFlag, IconSparkles, IconTheater,
   IconPlayNext, IconSpeed, IconHeart, IconAlert, IconStar, IconList, IconPlus, IconX, IconSpinner,
-  IconWhatsApp, IconTelegram, IconQr
+  IconWhatsApp, IconTelegram, IconQr, IconDownload
 } from '../../../components/Icons';
 import { generateQrSvg } from '../../../lib/qr';
 import { getQueue, addToQueue, shiftQueue } from '../../../lib/queue';
@@ -100,6 +100,25 @@ function WatchContent() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('broken_video');
   const [reportDetails, setReportDetails] = useState('');
+
+  // Download state
+  const [showDownloadSheet, setShowDownloadSheet] = useState(false);
+  const [downloadQualities, setDownloadQualities] = useState([]);
+  const [downloadLoading, setDownloadLoading] = useState(false);
+
+  const openDownloadSheet = async () => {
+    setShowDownloadSheet(true);
+    setDownloadLoading(true);
+    setDownloadQualities([]);
+    try {
+      const r = await fetch(`/api/download?vkey=${encodeURIComponent(vkey)}`);
+      const j = await r.json();
+      if (r.ok && Array.isArray(j.downloads)) {
+        setDownloadQualities(j.downloads);
+      }
+    } catch {}
+    setDownloadLoading(false);
+  };
   const [submittingReport, setSubmittingReport] = useState(false);
 
   const showToast = (msg) => {
@@ -1052,6 +1071,16 @@ function WatchContent() {
                   <span>{copied ? 'Copied!' : 'Share'}</span>
                 </button>
 
+                {/* Download */}
+                <button
+                  onClick={openDownloadSheet}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#1c1c1c] ring-1 ring-[#2c2c2c] text-neutral-200 hover:bg-[#2a2a2a] text-[13px] font-bold transition-all shrink-0"
+                  title="Download Video"
+                >
+                  <IconDownload size={16} />
+                  <span>Download</span>
+                </button>
+
                 {/* Report */}
                 <button
                   onClick={() => setShowReportModal(true)}
@@ -1234,6 +1263,69 @@ function WatchContent() {
               )}
 
               {/* Report Video Modal */}
+              {/* Download Quality Bottom Sheet */}
+              {showDownloadSheet && (
+                <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Download video">
+                  <div
+                    className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+                    onClick={() => setShowDownloadSheet(false)}
+                  />
+                  <div className="absolute inset-x-0 bottom-0 bg-[#141414] border-t border-[#2a2a2a] rounded-t-3xl shadow-2xl max-h-[70vh] flex flex-col">
+                    <div className="pt-3 pb-2 flex justify-center shrink-0">
+                      <div className="w-10 h-1.5 rounded-full bg-[#3a3a3a]" />
+                    </div>
+                    <div className="flex items-center justify-between px-5 pb-3 shrink-0">
+                      <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                        <IconDownload size={18} className="text-[#ff9900]" />
+                        Download Video
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setShowDownloadSheet(false)}
+                        className="w-9 h-9 rounded-full bg-[#1f1f1f] text-neutral-400 hover:text-white flex items-center justify-center"
+                        aria-label="Close"
+                      >
+                        <IconX size={16} />
+                      </button>
+                    </div>
+                    <div className="overflow-y-auto px-4 pb-6 space-y-2">
+                      {downloadLoading ? (
+                        <div className="flex items-center justify-center py-8 text-neutral-400 text-sm">
+                          <IconSpinner size={20} className="animate-spin mr-2" />
+                          Loading qualities...
+                        </div>
+                      ) : downloadQualities.length > 0 ? (
+                        downloadQualities.map((dq) => (
+                          <a
+                            key={dq.quality}
+                            href={dq.url}
+                            download
+                            className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl bg-[#1c1c1c] hover:bg-[#ff9900] hover:text-black text-white transition-colors group"
+                            onClick={() => setShowDownloadSheet(false)}
+                          >
+                            <span className="flex items-center gap-3">
+                              <span className="w-9 h-9 rounded-xl bg-[#ff9900]/15 group-hover:bg-black/10 flex items-center justify-center text-[#ff9900] group-hover:text-black">
+                                <IconDownload size={16} />
+                              </span>
+                              <span>
+                                <span className="block text-sm font-bold">{dq.quality}p HD</span>
+                                <span className="block text-xs text-neutral-500 group-hover:text-black/60">MP4 video file</span>
+                              </span>
+                            </span>
+                            <IconChevronR size={18} className="text-neutral-600 group-hover:text-black" />
+                          </a>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 px-4">
+                          <p className="text-neutral-400 text-sm mb-1">Download not available</p>
+                          <p className="text-neutral-600 text-xs">Try again later or try a different video.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {showReportModal && (
                 <div
                   className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
