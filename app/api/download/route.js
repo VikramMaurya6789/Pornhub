@@ -200,7 +200,8 @@ export async function GET(req) {
     }
 
     const safeTitle = (info?.title || vkey).replace(/[^a-z0-9-_ ]/gi, '_').slice(0, 60);
-    const filename = `${safeTitle}_${match.quality}p.mp4`;
+    const qLabel = /^\d+$/.test(match.quality) ? `${match.quality}p` : 'HD';
+    const filename = `${safeTitle}_${qLabel}.mp4`;
 
     const outHeaders = {
       'Content-Type': 'video/mp4',
