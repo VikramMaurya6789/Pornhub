@@ -64,17 +64,17 @@ export async function GET(req) {
     const streams = Array.isArray(info?.streams) ? info.streams : [];
 
     if (!file) {
-      // List available qualities: MP4 first, then HLS variants as fallback
+      // List available qualities: MP4 first, then HLS variants for every quality
       const list = downloads.map((d) => ({
         quality: d.quality,
         format: 'mp4',
         url: `/api/download?vkey=${encodeURIComponent(vkey)}&q=${encodeURIComponent(d.quality)}&file=1&format=mp4`,
       }));
 
-      // If no MP4s, fall back to HLS variants (always available since video plays)
-      if (list.length === 0 && streams.length > 0) {
+      // Always add HLS variants too (gives every quality: 240p/480p/720p/1080p)
+      // These play in VLC/MX Player. MP4s are preferred when available.
+      if (streams.length > 0) {
         const masterUrl = streams[0].url;
-        // Resolve the proxied master URL to the actual upstream URL
         let upstreamMaster = masterUrl;
         try {
           if (masterUrl.startsWith('/api/')) {
@@ -83,13 +83,21 @@ export async function GET(req) {
           }
         } catch {}
         const variants = await getHLSVariants(upstreamMaster);
+        const mp4Qualities = new Set(list.map((x) => String(x.quality)));
         for (const v of variants) {
+          // Skip if we already have this quality as MP4
+          if (mp4Qualities.has(String(v.quality))) continue;
           list.push({
             quality: v.quality,
             format: 'hls',
             url: `/api/download?vkey=${encodeURIComponent(vkey)}&q=${encodeURIComponent(v.quality)}&file=1&format=hls&hlsurl=${encodeURIComponent(v.url)}`,
           });
         }
+        // Sort: MP4s first (highest quality), then HLS (highest quality)
+        list.sort((a, b) => {
+          if (a.format !== b.format) return a.format === 'mp4' ? -1 : 1;
+          return (parseInt(b.quality) || 0) - (parseInt(a.quality) || 0);
+        });
       }
 
       return NextResponse.json(
