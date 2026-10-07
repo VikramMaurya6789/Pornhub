@@ -66,6 +66,9 @@ export async function GET(req) {
     if (e.status === 404 || e.message === 'video not found' || (e.message && e.message.includes('not found'))) {
       return NextResponse.json({ error: 'video not found' }, { status: 404, headers: CORS_HEADERS });
     }
+    if (e.status === 502) {
+      return NextResponse.json({ error: e.message || 'streams temporarily unavailable' }, { status: 502, headers: CORS_HEADERS });
+    }
 
     const pool = scraper.getFallbackVideos ? scraper.getFallbackVideos() : [];
     const matched = pool.find(c => c.vkey === vkey) || null;
@@ -89,7 +92,9 @@ export async function GET(req) {
     } catch {}
 
     if (streams.length === 0) {
-      streams = [{ quality: '1080', url: `/api/hls?vkey=6a8c673a68504` }];
+      // Never substitute another video's streams (that played the wrong
+      // video under the wrong title/thumbnail). Honest 502 for retry.
+      return NextResponse.json({ error: 'streams temporarily unavailable' }, { status: 502, headers: CORS_HEADERS });
     }
 
     const fallbackSec = matched.durationSec || (scraper.parseDurationSec ? scraper.parseDurationSec(matched.duration) : null);
