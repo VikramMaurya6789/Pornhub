@@ -198,11 +198,28 @@ export async function GET(req) {
     }
 
     // Validate: upstream must return video content, not an HTML error page.
-    // A real video is MBs; an error page is KBs with text/html content-type.
+    // Peek at first bytes: MP4 starts with 'ftyp', HTML starts with '<'.
     const upstreamCT = (headers['content-type'] || '').toLowerCase();
     const upstreamLen = parseInt(headers['content-length'] || '0', 10);
+
+    // If we have a buffer (small response), inspect it directly
+    if (buffer) {
+      const buf = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+      const head = buf.slice(0, 16).toString('utf8', 0, 16);
+      const isHtmlContent = head.trimStart().startsWith('<') || head.includes('<html');
+      const isMp4 = buf.slice(4, 8).toString() === 'ftyp';
+      if (isHtmlContent || (!isMp4 && buf.length < 1024 * 1024)) {
+        console.error(`[download] Upstream returned non-video buffer: len=${buf.length} head=${head.slice(0, 40)}`);
+        return NextResponse.json(
+          { error: 'Video file not available from source' },
+          { status: 502, headers: CORS_HEADERS }
+        );
+      }
+    }
+
     const isHtml = upstreamCT.includes('text/html');
-    const isTiny = upstreamLen > 0 && upstreamLen < 100 * 1024; // <100KB = not a video
+    // Also treat missing/unknown content-type with tiny size as invalid
+    const isTiny = upstreamLen > 0 && upstreamLen < 500 * 1024; // <500KB = suspicious
     if (isHtml || isTiny) {
       console.error(`[download] Upstream returned non-video: ct=${upstreamCT} len=${upstreamLen} url=${match.url.slice(0, 100)}`);
       try { res.kill && res.kill(); } catch {}
