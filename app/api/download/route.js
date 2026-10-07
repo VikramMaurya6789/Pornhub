@@ -18,22 +18,42 @@ async function getHLSVariants(masterUrl) {
   try {
     const res = await curlText(masterUrl, 10);
     if (!res || res.status !== 200 || !res.text) return [];
-    const lines = res.text.split('\n');
+    const text = res.text;
+    // Must be a master playlist (contains STREAM-INF), not a media playlist
+    if (!text.includes('#EXT-X-STREAM-INF')) {
+      // It's already a variant playlist - treat as single quality
+      // Try to guess quality from URL
+      const m = masterUrl.match(/(\d{3,4})[pP]/);
+      return [{ quality: m ? m[1] : 'auto', url: masterUrl, format: 'hls' }];
+    }
+    const lines = text.split('\n');
     const variants = [];
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
-      if (line.startsWith('#EXT-X-STREAM-INF')) {
-        const resMatch = line.match(/RESOLUTION=\d+x(\d+)/);
-        const bwMatch = line.match(/BANDWIDTH=(\d+)/);
+      if (line.toUpperCase().startsWith('#EXT-X-STREAM-INF')) {
+        const resMatch = line.match(/RESOLUTION=\d+x(\d+)/i);
+        const bwMatch = line.match(/BANDWIDTH=(\d+)/i);
         const urlLine = (lines[i + 1] || '').trim();
         if (urlLine && !urlLine.startsWith('#')) {
-          const absUrl = new URL(urlLine, masterUrl).toString();
-          const quality = resMatch ? resMatch[1] : (bwMatch ? Math.round(parseInt(bwMatch[1]) / 1000) + 'k' : 'auto');
+          let absUrl;
+          try {
+            absUrl = new URL(urlLine, masterUrl).toString();
+          } catch { continue; }
+          let quality;
+          if (resMatch) {
+            quality = resMatch[1];
+          } else if (bwMatch) {
+            // Estimate quality from bandwidth: <1M=360, <2.5M=480, <5M=720, else 1080
+            const bw = parseInt(bwMatch[1]);
+            quality = bw < 1000000 ? '360' : bw < 2500000 ? '480' : bw < 5000000 ? '720' : '1080';
+          } else {
+            quality = 'auto';
+          }
           variants.push({ quality, url: absUrl, format: 'hls' });
         }
       }
     }
-    // Deduplicate by quality, keep highest bandwidth
+    // Deduplicate by quality, keep first occurrence
     const seen = new Map();
     for (const v of variants) {
       if (!seen.has(v.quality)) seen.set(v.quality, v);
