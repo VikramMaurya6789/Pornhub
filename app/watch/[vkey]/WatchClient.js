@@ -1063,26 +1063,7 @@ function WatchContent() {
                 </button>
               </div>
 
-                {/* Autoplay & Theater quick toggles */}
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={toggleAutoplay}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${autoplayNext ? 'bg-[#ff9900]/15 text-[#ff9900] border border-[#ff9900]/30' : 'bg-[#181818] text-neutral-400 border border-[#252525]'}`}
-                    title="Autoplay next video when current video ends"
-                  >
-                    <span>Autoplay</span>
-                    <span className={`w-2 h-2 rounded-full ${autoplayNext ? 'bg-[#ff9900]' : 'bg-neutral-600'}`} />
-                  </button>
-
-                  <button
-                    onClick={toggleTheater}
-                    className={`p-2 rounded-lg border text-xs font-semibold transition-colors ${theaterMode ? 'bg-[#ff9900] text-black border-[#ff9900]' : 'bg-[#181818] text-neutral-300 border-[#252525] hover:text-white'}`}
-                    title={theaterMode ? 'Exit Theater Mode' : 'Theater Mode'}
-                  >
-                    <IconTheater size={16} />
-                  </button>
-                </div>
-
+                {/* Autoplay & Theater are in the player settings/control bar — removed duplicates for clean UI */}
               {/* Save to Playlist Modal */}
               {showPlaylistModal && (
                 <div

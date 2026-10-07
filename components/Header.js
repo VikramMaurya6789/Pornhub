@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   IconSearch, IconHome, IconFlame, IconEye, IconStar, IconGrid,
-  IconMenu, IconX, IconHeart, IconClock, IconTag, IconSparkles, IconHistory, IconUser
+  IconMenu, IconX, IconHeart, IconClock, IconTag, IconSparkles, IconHistory, IconUser,
+  IconBell, IconThumbUp
 } from './Icons';
 import { fetchMe, getCachedUser, openAuthModal, signOut as authSignOut, subscribeAuth } from '../lib/auth-client';
 
@@ -15,10 +16,10 @@ const NAV = [
   { href: '/list/most_viewed', label: 'Most Viewed', icon: IconEye },
   { href: '/list/top_rated', label: 'Top Rated', icon: IconStar },
   { href: '/categories', label: 'Categories', icon: IconGrid },
-  { href: '/models', label: 'Stars', icon: IconStar },
-  { href: '/subscriptions', label: 'Subscriptions', icon: IconStar },
+  { href: '/models', label: 'Stars', icon: IconUser },
+  { href: '/subscriptions', label: 'Subscriptions', icon: IconBell },
   { href: '/favorites', label: 'Favorites', icon: IconHeart },
-  { href: '/liked', label: 'Liked', icon: IconHeart },
+  { href: '/liked', label: 'Liked', icon: IconThumbUp },
   { href: '/history', label: 'History', icon: IconClock },
 ];
 
