@@ -99,6 +99,7 @@ export default function Player({
   const [errorMsg, setErrorMsg] = useState('');
   const [showControls, setShowControls] = useState(true);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [showQualityMenu, setShowQualityMenu] = useState(false); // Dedicated clean quality sheet (Pornhub-style)
   const [contextMenu, setContextMenu] = useState(null); // {x, y} for right-click menu
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -1106,7 +1107,7 @@ export default function Player({
       const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
       const delay = isTouch ? 8000 : 5000;
       controlsTimeoutRef.current = setTimeout(() => {
-        if (!showSettingsMenu && !showSpeedMenu && !showShortcuts && !isSeekingRef.current && !isUserSeekingRef.current) {
+        if (!showSettingsMenu && !showQualityMenu && !showSpeedMenu && !showShortcuts && !isSeekingRef.current && !isUserSeekingRef.current) {
           setShowControls(false);
         } else {
           // User is busy (seeking/menu) — retry hiding after the delay.
@@ -1114,7 +1115,7 @@ export default function Player({
         }
       }, delay);
     }
-  }, [isPlaying, showSettingsMenu, showSpeedMenu, showShortcuts]);
+  }, [isPlaying, showSettingsMenu, showQualityMenu, showSpeedMenu, showShortcuts]);
 
   const handleMouseMove = () => {
     resetControlsTimeout();
@@ -1122,12 +1123,13 @@ export default function Player({
 
   // Close menus when clicking outside cleanly using pointerdown
   useEffect(() => {
-    if (!showSettingsMenu && !showSpeedMenu && !showQueue && !contextMenu) return;
+    if (!showSettingsMenu && !showQualityMenu && !showSpeedMenu && !showQueue && !contextMenu) return;
     const handleOutsideClick = (e) => {
       if (
         e.target &&
         e.target.closest &&
         !e.target.closest('.settings-menu-container') &&
+        !e.target.closest('.quality-menu-container') &&
         !e.target.closest('.speed-menu-container') &&
         !e.target.closest('.queue-panel-container') &&
         !e.target.closest('.player-context-menu')
@@ -1220,8 +1222,9 @@ export default function Player({
     if (isTouchInteractionRef.current) {
       return;
     }
-    if (showSettingsMenu || showSpeedMenu || showShortcuts) {
+    if (showSettingsMenu || showQualityMenu || showSpeedMenu || showShortcuts) {
       setShowSettingsMenu(false);
+      setShowQualityMenu(false);
       setShowSpeedMenu(false);
       setShowShortcuts(false);
       return;
@@ -2163,7 +2166,7 @@ export default function Player({
       onMouseLeave={() => {
         playerHoverRef.current = false;
         // Don't yank controls (and open menus) away while a menu is open
-        if (isPlaying && !showSettingsMenu && !showSpeedMenu && !showQueue && !showShortcuts) setShowControls(false);
+        if (isPlaying && !showSettingsMenu && !showQualityMenu && !showSpeedMenu && !showQueue && !showShortcuts) setShowControls(false);
       }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
@@ -2468,7 +2471,7 @@ export default function Player({
       {/* Bottom Floating Control Bar */}
       <div
         className={`absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/85 to-transparent px-2 sm:px-4 pt-8 pb-safe flex flex-col gap-2 transition-all duration-300 z-30 ${
-          showControls || !isPlaying || showSettingsMenu || showSpeedMenu
+          showControls || !isPlaying || showSettingsMenu || showQualityMenu || showSpeedMenu
             ? 'opacity-100 translate-y-0 pointer-events-auto visible'
             : 'opacity-0 translate-y-2 pointer-events-none invisible group-hover/player:opacity-100 group-hover/player:translate-y-0 group-hover/player:pointer-events-auto group-hover/player:visible'
         }`}
@@ -2677,6 +2680,66 @@ export default function Player({
             </div>
 
             {/* Quality Menu with >= 44px Touch Target */}
+            <div className="relative quality-menu-container z-40 pointer-events-auto">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  haptic();
+                  setShowQualityMenu((prev) => !prev);
+                  setShowSettingsMenu(false);
+                  setShowSpeedMenu(false);
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                aria-label="Video quality"
+                className="min-h-[44px] min-w-[44px] flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 text-white hover:text-[#ff9900] text-xs font-bold transition-colors cursor-pointer touch-manipulation pointer-events-auto"
+                title="Quality"
+              >
+                <IconSettings size={15} className="sm:hidden" />
+                <span className="capitalize">{activeQualityLabel}</span>
+              </button>
+
+              {/* Pornhub-style clean quality bottom sheet — only quality options, fits screen */}
+              {showQualityMenu && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="fixed inset-x-4 bottom-24 z-50 sm:absolute sm:inset-x-auto sm:right-0 sm:bottom-12 sm:z-50 bg-[#1a1a1a] border border-[#2e2e2e] rounded-2xl p-2 shadow-2xl w-auto sm:min-w-[180px] max-h-[50vh] overflow-y-auto backdrop-blur-md pointer-events-auto"
+                >
+                  <div className="px-3 pt-1.5 pb-2 text-[11px] uppercase font-bold tracking-widest text-neutral-400 text-center">
+                    Quality
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { haptic(); updateQuality('auto'); setShowQualityMenu(false); }}
+                    className={`w-full text-center min-h-[48px] px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors touch-manipulation cursor-pointer ${
+                      quality === 'auto'
+                        ? 'bg-[#ff9900] text-black font-bold'
+                        : 'text-neutral-200 hover:text-white hover:bg-[#2a2a2a] active:bg-[#333]'
+                    }`}
+                  >
+                    Auto{quality === 'auto' && activeQualityLabel.includes('(') ? ` ${activeQualityLabel.match(/\(([^)]+)\)/)?.[1] || ''}` : ''}
+                  </button>
+                  {qualities.map((q) => (
+                    <button
+                      key={q}
+                      type="button"
+                      onClick={() => { haptic(); updateQuality(q); setShowQualityMenu(false); }}
+                      className={`w-full text-center min-h-[48px] px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors touch-manipulation cursor-pointer mt-1 ${
+                        quality === q
+                          ? 'bg-[#ff9900] text-black font-bold'
+                          : 'text-neutral-200 hover:text-white hover:bg-[#2a2a2a] active:bg-[#333]'
+                      }`}
+                    >
+                      {q}p
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Settings Menu (gear) — Loop, Autoplay, Sleep Timer etc. */}
             <div className="relative settings-menu-container z-40 pointer-events-auto">
               <button
                 type="button"
@@ -2684,14 +2747,14 @@ export default function Player({
                   e.stopPropagation();
                   setShowSettingsMenu((prev) => !prev);
                   setShowSpeedMenu(false);
+                  setShowQualityMenu(false);
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
-                aria-label="Video quality settings"
-                className="min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 text-white hover:text-[#ff9900] text-xs font-bold transition-colors cursor-pointer touch-manipulation pointer-events-auto"
-                title="Quality Settings"
+                aria-label="Player settings"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/20 text-white hover:text-[#ff9900] transition-colors cursor-pointer touch-manipulation pointer-events-auto"
+                title="Settings"
               >
-                <IconSettings size={15} />
-                <span className="capitalize hidden sm:inline">{activeQualityLabel}</span>
+                <IconSettings size={18} />
               </button>
 
               {showSettingsMenu && (
@@ -2778,36 +2841,7 @@ export default function Player({
                       />
                     </span>
                   </button>
-                  <div className="px-3.5 pt-2.5 pb-1 text-[10px] uppercase font-bold tracking-wider text-neutral-500">
-                    Quality
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => updateQuality('auto')}
-                    className={`w-full text-left min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-between touch-manipulation cursor-pointer pointer-events-auto ${
-                      quality === 'auto'
-                        ? 'bg-[#ff9900] text-black font-bold'
-                        : 'text-neutral-300 hover:text-white hover:bg-[#222]'
-                    }`}
-                  >
-                    <span>Auto</span>
-                    {quality === 'auto' && <IconCheck size={14} className="text-black stroke-[3]" />}
-                  </button>
-                  {qualities.map((q) => (
-                    <button
-                      key={q}
-                      type="button"
-                      onClick={() => updateQuality(q)}
-                      className={`w-full text-left min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-between touch-manipulation cursor-pointer pointer-events-auto ${
-                        quality === q
-                          ? 'bg-[#ff9900] text-black font-bold'
-                          : 'text-neutral-300 hover:text-white hover:bg-[#222]'
-                      }`}
-                    >
-                      <span>{q}p</span>
-                      {quality === q && <IconCheck size={14} className="text-black stroke-[3]" />}
-                    </button>
-                  ))}
+                  {/* Quality moved to its own dedicated bottom sheet (Pornhub-style) */}
 
                   {/* Sleep Timer Selector */}
                   <div className="px-3.5 pt-2.5 pb-1 text-[10px] uppercase font-bold tracking-wider text-neutral-500 flex items-center justify-between">
