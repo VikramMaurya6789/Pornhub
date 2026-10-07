@@ -125,10 +125,10 @@ export async function GET(req) {
       'Content-Type': ct,
       'Accept-Ranges': 'bytes',
       'Vary': 'Range, Accept-Encoding',
-      // Edge-cache segments at Vercel's edge (Mumbai PoP for Indian users).
-      // The upstream token in the URL is stable for the scrape-cache window,
-      // so 10-min edge caching is safe and massively cuts repeat buffering.
-      'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=3600',
+      // No edge caching for segments: stale/corrupt cached segments cause
+      // video jumping (frames from wrong positions). Fresh fetch every time
+      // ensures correct bytes. The Mumbai region keeps latency low.
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
       ...CORS_HEADERS,
     };
     if (headers['content-length']) outHeaders['Content-Length'] = headers['content-length'];

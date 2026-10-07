@@ -256,9 +256,9 @@ export default function HomePage() {
 
         {/* Main Feed Content */}
         <main className="flex-1 min-w-0">
-          {/* Trending Searches Chip Row (Top 12 queries - Hide when empty) */}
+          {/* Trending Searches Chip Row (mobile only — desktop uses the section below) */}
           {trendingSearches.length > 0 && (
-            <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none text-xs">
+            <div className="sm:hidden mb-4 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none text-xs">
               <span className="flex items-center gap-1.5 font-bold text-neutral-400 shrink-0 uppercase tracking-wider text-[11px] mr-1">
                 <IconSearch size={13} className="text-[#ff9900]" />
                 Trending:
