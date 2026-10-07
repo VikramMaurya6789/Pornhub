@@ -56,6 +56,14 @@ export default function Player({
   const [quality, setQuality] = useState('auto');
   const [qualityIndex, setQualityIndex] = useState(0);
 
+  // Direct CDN playback: if the user's network can reach phncdn directly
+  // (bypassing our proxy), use it — 10x faster. Probed per video; falls
+  // back to the /api/seg proxy if direct fails (ISP blocks, etc.).
+  const [directOk, setDirectOk] = useState(null); // null=probing, true=direct, false=proxy
+  const directProbeRef = useRef(null);
+  const directOkRef = useRef(null);
+  useEffect(() => { directOkRef.current = directOk; }, [directOk]);
+
   const canonicalDurationSec = useMemo(() => parseDurationToSec(propDuration), [propDuration]);
   const canonicalDurationRef = useRef(canonicalDurationSec);
   const durationMismatchWarnedRef = useRef(false);
@@ -305,15 +313,71 @@ export default function Player({
     }
   }, [internalStreams, quality, computeInitialAutoIndex]);
 
+  // Extract the direct upstream URL from a proxied /api/hls URL (the `u` param).
+  const extractDirectUrl = useCallback((proxiedUrl) => {
+    if (!proxiedUrl || !proxiedUrl.includes('/api/hls')) return null;
+    try {
+      const u = new URL(proxiedUrl, window.location.origin);
+      const direct = u.searchParams.get('u');
+      return direct && /^https?:\/\//.test(direct) ? direct : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // Probe direct CDN reachability once per video. If phncdn is reachable
+  // from the user's network, bypass the proxy for full-speed playback.
+  useEffect(() => {
+    if (!internalStreams || !internalStreams.length || directProbeRef.current === vkey) return;
+    directProbeRef.current = vkey;
+    setDirectOk(null);
+
+    const firstDirect = extractDirectUrl(internalStreams[0]?.url);
+    if (!firstDirect) {
+      setDirectOk(false);
+      return;
+    }
+
+    let cancelled = false;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 4000);
+
+    fetch(firstDirect, { method: 'HEAD', mode: 'cors', signal: ctrl.signal, referrerPolicy: 'no-referrer' })
+      .then((r) => {
+        if (!cancelled) setDirectOk(r.ok);
+      })
+      .catch(() => {
+        if (!cancelled) setDirectOk(false);
+      })
+      .finally(() => clearTimeout(timer));
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      try { ctrl.abort(); } catch {}
+    };
+  }, [internalStreams, vkey, extractDirectUrl]);
+
   const currentSrc = useMemo(() => {
     if (!internalStreams || !internalStreams.length) return null;
+    let proxied;
     if (quality === 'auto') {
       const target = internalStreams[qualityIndex] || internalStreams[0];
-      return target?.url;
+      proxied = target?.url;
+    } else {
+      const match = internalStreams.find((s) => s.quality === quality);
+      proxied = match ? match.url : internalStreams[0]?.url;
     }
-    const match = internalStreams.find((s) => s.quality === quality);
-    return match ? match.url : internalStreams[0]?.url;
-  }, [internalStreams, quality, qualityIndex]);
+    // Use direct CDN URL if the probe succeeded (much faster, no proxy hop).
+    if (directOk === true && proxied) {
+      try {
+        const u = new URL(proxied, window.location.origin);
+        const direct = u.searchParams.get('u');
+        if (direct && /^https?:\/\//.test(direct)) return direct;
+      } catch {}
+    }
+    return proxied || null;
+  }, [internalStreams, quality, qualityIndex, directOk]);
 
   const activeQualityLabel = useMemo(() => {
     if (quality === 'auto') {
@@ -832,6 +896,9 @@ export default function Player({
   // HLS / Video source initialization with timestamp & play state preservation
   useEffect(() => {
     if (!currentSrc) return;
+    // Wait for the direct-CDN probe to complete so we load the optimal URL
+    // on the first try (avoids a mid-playback source switch).
+    if (directOk === null && currentSrc.includes('/api/hls')) return;
 
     const video = videoRef.current;
     if (!video) return;
@@ -976,6 +1043,13 @@ export default function Player({
             case Hls.ErrorTypes.NETWORK_ERROR:
               console.warn('[Player] HLS network error:', data.details);
               if (data.response && data.response.code >= 400) {
+                // If direct CDN failed, fall back to the proxy (don't stay broken).
+                if (directOkRef.current === true) {
+                  console.warn('[Player] Direct CDN failed, falling back to proxy');
+                  directOkRef.current = false;
+                  setDirectOk(false);
+                  break;
+                }
                 hls.destroy();
                 if (handleStreamErrorRef.current) handleStreamErrorRef.current();
               } else {
@@ -1044,7 +1118,7 @@ export default function Player({
         hlsRef.current = null;
       }
     };
-  }, [currentSrc]);
+  }, [currentSrc, directOk]);
 
   // Keep volume, mute and playback rate synced with video element
   useEffect(() => {
