@@ -196,6 +196,21 @@ export async function GET(req) {
     if (!webStream && !stream && !buffer) {
       return NextResponse.json({ error: 'Download failed upstream' }, { status: 502, headers: CORS_HEADERS });
     }
+
+    // Validate: upstream must return video content, not an HTML error page.
+    // A real video is MBs; an error page is KBs with text/html content-type.
+    const upstreamCT = (headers['content-type'] || '').toLowerCase();
+    const upstreamLen = parseInt(headers['content-length'] || '0', 10);
+    const isHtml = upstreamCT.includes('text/html');
+    const isTiny = upstreamLen > 0 && upstreamLen < 100 * 1024; // <100KB = not a video
+    if (isHtml || isTiny) {
+      console.error(`[download] Upstream returned non-video: ct=${upstreamCT} len=${upstreamLen} url=${match.url.slice(0, 100)}`);
+      try { res.kill && res.kill(); } catch {}
+      return NextResponse.json(
+        { error: 'Video file not available from source (got error page instead)' },
+        { status: 502, headers: CORS_HEADERS }
+      );
+    }
     const safeTitle = (info?.title || vkey).replace(/[^a-z0-9-_ ]/gi, '_').slice(0, 60);
     const qLabel = /^\d+$/.test(match.quality) ? `${match.quality}p` : 'HD';
     const filename = `${safeTitle}_${qLabel}.mp4`;
