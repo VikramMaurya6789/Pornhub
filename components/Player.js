@@ -389,18 +389,8 @@ export default function Player({
             const targetQuality = internalStreams[higherIdx]?.quality;
             const targetQNum = parseInt(targetQuality, 10);
 
-            // Cap level to player size for manual levels
-            const container = containerRef.current;
-            const renderedWidth = container
-              ? container.getBoundingClientRect().width
-              : (typeof window !== 'undefined' ? window.innerWidth : 1024);
-
-            if (renderedWidth > 0 && renderedWidth < 640 && targetQNum > 480) {
-              return; // Capped to player size (max 480p on width < 640px)
-            }
-            if (renderedWidth > 0 && renderedWidth < 1280 && targetQNum > 720) {
-              return; // Capped to player size (max 720p on width < 1280px)
-            }
+            // No player-size cap — if the network can handle it, allow 720p+
+            // even on small phone screens (user preference).
 
             // Check bandwidth estimate allows
             if (typeof navigator !== 'undefined' && navigator.connection) {
@@ -890,7 +880,15 @@ export default function Player({
         startLevel: -1,
         startPosition: currentPos > 0 ? currentPos : -1,
         autoStartLoad: true,
-        capLevelToPlayerSize: true, // Cap level to player size for manual & auto levels
+        // Don't cap quality to player size — phones have small players but
+        // users want 720p+ if their network can handle it.
+        capLevelToPlayerSize: false,
+
+        // ABR tuning: less aggressive down-switching, faster up-switching.
+        // The proxy adds latency which deflates bandwidth estimates, so be
+        // conservative about dropping and eager about recovering.
+        abrBandWidthFactor: 0.9,
+        abrBandWidthUpFactor: 0.6,
 
         // Seek & buffer hole configuration
         maxSeekHole: 2, // Max buffer hole size to seek over (seconds)
