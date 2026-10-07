@@ -78,7 +78,7 @@ export async function GET(req) {
       return NextResponse.json({ error: 'vkey required' }, { status: 400, headers: CORS_HEADERS });
     }
 
-    const info = await scraper.videoInfo(vkey, false);
+    const info = await scraper.videoInfo(vkey, file ? true : false);
     const downloads = Array.isArray(info?.downloads) ? info.downloads : [];
     const streams = Array.isArray(info?.streams) ? info.streams : [];
 
