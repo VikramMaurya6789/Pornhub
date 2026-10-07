@@ -247,6 +247,40 @@ export async function GET(req) {
 }
 
 export async function HEAD(req) {
-  const res = await GET(req);
-  return new NextResponse(null, { status: res.status, headers: res.headers });
+  // Lightweight validation: check if download is available without fetching body
+  try {
+    const { searchParams } = new URL(req.url);
+    const vkey = searchParams.get('vkey');
+    const quality = searchParams.get('q');
+    const file = searchParams.get('file');
+    const format = searchParams.get('format') || 'mp4';
+    const hlsurl = searchParams.get('hlsurl');
+
+    if (!vkey || !file) {
+      return new NextResponse(null, { status: 400, headers: CORS_HEADERS });
+    }
+
+    const info = await scraper.videoInfo(vkey, false);
+    const downloads = Array.isArray(info?.downloads) ? info.downloads : [];
+
+    if (format === 'hls' && hlsurl) {
+      return new NextResponse(null, {
+        status: 200,
+        headers: { 'Content-Type': 'application/vnd.apple.mpegurl', ...CORS_HEADERS },
+      });
+    }
+
+    const match = downloads.find((d) => String(d.quality) === String(quality)) || downloads[0];
+    if (!match || !match.url) {
+      return new NextResponse(null, { status: 404, headers: CORS_HEADERS });
+    }
+
+    // Valid MP4 available
+    return new NextResponse(null, {
+      status: 200,
+      headers: { 'Content-Type': 'video/mp4', ...CORS_HEADERS },
+    });
+  } catch {
+    return new NextResponse(null, { status: 500, headers: CORS_HEADERS });
+  }
 }

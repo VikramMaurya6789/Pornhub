@@ -1296,12 +1296,35 @@ function WatchContent() {
                         </div>
                       ) : downloadQualities.length > 0 ? (
                         downloadQualities.map((dq) => (
-                          <a
+                          <button
                             key={dq.quality}
-                            href={dq.url}
-                            download
-                            className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl bg-[#1c1c1c] hover:bg-[#ff9900] hover:text-black text-white transition-colors group"
-                            onClick={() => setShowDownloadSheet(false)}
+                            type="button"
+                            onClick={async () => {
+                              setShowDownloadSheet(false);
+                              showToast('Checking download...');
+                              try {
+                                // HEAD check: verify it's a valid video before downloading
+                                const head = await fetch(dq.url, { method: 'HEAD' });
+                                const ct = head.headers.get('content-type') || '';
+                                if (!head.ok || ct.includes('application/json')) {
+                                  showToast('Download not available for this video');
+                                  return;
+                                }
+                                // Valid - trigger native browser download
+                                // (Content-Disposition: attachment header handles it)
+                                const a = document.createElement('a');
+                                a.href = dq.url;
+                                a.download = `video_${dq.quality}p.${dq.format === 'hls' ? 'm3u8' : 'mp4'}`;
+                                a.target = '_blank';
+                                document.body.appendChild(a);
+                                a.click();
+                                a.remove();
+                                showToast('Download started!');
+                              } catch (e) {
+                                showToast('Download failed. Try again.');
+                              }
+                            }}
+                            className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl bg-[#1c1c1c] hover:bg-[#ff9900] hover:text-black text-white transition-colors group cursor-pointer"
                           >
                             <span className="flex items-center gap-3">
                               <span className="w-9 h-9 rounded-xl bg-[#ff9900]/15 group-hover:bg-black/10 flex items-center justify-center text-[#ff9900] group-hover:text-black">
@@ -1320,7 +1343,7 @@ function WatchContent() {
                               </span>
                             </span>
                             <IconChevronR size={18} className="text-neutral-600 group-hover:text-black" />
-                          </a>
+                          </button>
                         ))
                       ) : (
                         <div className="text-center py-8 px-4">
