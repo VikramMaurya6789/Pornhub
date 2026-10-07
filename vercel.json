@@ -1,11 +1,6 @@
 {
   "framework": "nextjs",
-  "regions": ["fra1"],
-  "functions": {
-    "app/api/seg/route.js": {
-      "region": "bom1"
-    }
-  },
+  "regions": ["bom1"],
   "headers": [
     {
       "source": "/api/feed",
