@@ -1098,16 +1098,23 @@ export default function Player({
     };
   }, []);
 
-  // Autohide controls after 3s of inactivity while playing
+  // Autohide controls after inactivity while playing.
+  // Mobile gets a longer delay (8s vs 5s) since taps are slower, and controls
+  // NEVER hide while the user is actively seeking (dragging the seekbar).
   const resetControlsTimeout = useCallback(() => {
     setShowControls(true);
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     if (isPlaying) {
+      const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+      const delay = isTouch ? 8000 : 5000;
       controlsTimeoutRef.current = setTimeout(() => {
-        if (!showSettingsMenu && !showSpeedMenu && !showShortcuts) {
+        if (!showSettingsMenu && !showSpeedMenu && !showShortcuts && !isSeekingRef.current && !isUserSeekingRef.current) {
           setShowControls(false);
+        } else {
+          // User is busy (seeking/menu) — retry hiding after the delay.
+          resetControlsTimeout();
         }
-      }, 5000);
+      }, delay);
     }
   }, [isPlaying, showSettingsMenu, showSpeedMenu, showShortcuts]);
 
