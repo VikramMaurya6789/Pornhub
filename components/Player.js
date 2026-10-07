@@ -253,10 +253,10 @@ export default function Player({
   const qualities = useMemo(() => (internalStreams || []).map((s) => s.quality), [internalStreams]);
 
   // Compute smart Auto initial quality level
-  // Start at the HIGHEST available quality (e.g. 1080p). The rebuffering
-  // stall monitor steps down automatically if the network can't keep up,
-  // and steps back up when the buffer is healthy. Only truly slow
-  // connections (2g/3g/slow-2g or data-saver) start low.
+  // Start at 720p (not 1080p) for fast startup and minimal buffering — the
+  // video bytes are proxied through our servers, so starting one step below
+  // max avoids the initial stall while ABR steps up if bandwidth allows.
+  // Only truly slow connections (2g/3g/slow-2g or data-saver) start at 480p.
   const computeInitialAutoIndex = useCallback((streamList) => {
     if (!streamList || !streamList.length) return 0;
 
@@ -268,13 +268,12 @@ export default function Player({
       }
     }
 
-    if (!isSlow) return 0; // highest available quality first (1080p)
-
-    // Slow network: start at 480p (or lowest available)
+    const targetMax = isSlow ? 480 : 720;
     for (let i = 0; i < streamList.length; i++) {
       const qNum = parseInt(streamList[i].quality, 10);
-      if (!isNaN(qNum) && qNum <= 480) return i;
+      if (!isNaN(qNum) && qNum <= targetMax) return i;
     }
+    // No quality at/below target (e.g. only 1080p available) — use lowest
     return streamList.length - 1;
   }, []);
 
