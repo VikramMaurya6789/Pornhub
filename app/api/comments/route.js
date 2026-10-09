@@ -41,6 +41,8 @@ function shapeComment(c) {
     date: timeAgo(c.createdAt),
     message: c.message,
     upvotes: c.upvotes || 0,
+    downvotes: c.downvotes || 0,
+    parentId: c.parentId || null,
     createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : c.createdAt,
   };
 }
@@ -139,6 +141,7 @@ export async function POST(req) {
 
     const author = escapeHtml(rawAuthor.slice(0, 40)) || 'Anonymous';
     const message = escapeHtml(rawText);
+    const parentId = typeof body.parentId === 'string' ? body.parentId.trim().slice(0, 64) || null : null;
 
     const created = await prisma.comment.create({
       data: {
@@ -147,6 +150,7 @@ export async function POST(req) {
         userId: userId || null,
         author,
         message,
+        parentId,
       },
     });
 
@@ -157,5 +161,39 @@ export async function POST(req) {
   } catch (err) {
     console.error('[API /api/comments] POST error:', err.message);
     return NextResponse.json({ error: 'Failed to post comment' }, { status: 500, headers: CORS_HEADERS });
+  }
+}
+
+export async function PATCH(req) {
+  try {
+    const body = await req.json().catch(() => null);
+    if (!body) {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400, headers: CORS_HEADERS });
+    }
+
+    const commentId = String(body.commentId || '').trim();
+    const vote = String(body.vote || '').trim(); // 'up' or 'down'
+
+    if (!commentId || !['up', 'down'].includes(vote)) {
+      return NextResponse.json({ error: 'commentId and vote (up/down) required' }, { status: 400, headers: CORS_HEADERS });
+    }
+
+    if (!dbAvailable()) {
+      return NextResponse.json({ error: 'Unavailable' }, { status: 503, headers: CORS_HEADERS });
+    }
+
+    const field = vote === 'up' ? 'upvotes' : 'downvotes';
+    const updated = await prisma.comment.update({
+      where: { id: commentId },
+      data: { [field]: { increment: 1 } },
+    });
+
+    return NextResponse.json(
+      { success: true, comment: shapeComment(updated) },
+      { headers: CORS_HEADERS }
+    );
+  } catch (err) {
+    console.error('[API /api/comments] PATCH error:', err.message);
+    return NextResponse.json({ error: 'Failed to vote' }, { status: 500, headers: CORS_HEADERS });
   }
 }

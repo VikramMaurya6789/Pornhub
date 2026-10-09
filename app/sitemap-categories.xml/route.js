@@ -72,7 +72,7 @@ function escapeXml(unsafe) {
 }
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://orangehub.royalcloud.qzz.io';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://orangehub-195.netlify.app';
   const now = new Date().toISOString();
 
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;

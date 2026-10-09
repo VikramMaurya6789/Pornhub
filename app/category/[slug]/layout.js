@@ -6,7 +6,7 @@ export async function generateMetadata({ params }) {
   const cleanSlug = rawSlug.toLowerCase().replace(/[^a-z0-9_-]/g, '');
   const categoryTitle = cleanSlug.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
-  let coverUrl = 'https://orangehub.royalcloud.qzz.io/og-banner.png';
+  let coverUrl = 'https://orangehub-195.netlify.app/og-banner.png';
 
   try {
     await scraper.warmup();
@@ -24,17 +24,17 @@ export async function generateMetadata({ params }) {
 
       if (match && match.thumbnail) {
         coverUrl = match.thumbnail.startsWith('http')
-          ? `https://orangehub.royalcloud.qzz.io/api/img?u=${encodeURIComponent(match.thumbnail)}`
+          ? `https://orangehub-195.netlify.app/api/img?u=${encodeURIComponent(match.thumbnail)}`
           : (match.thumbnail.startsWith('/')
-            ? `https://orangehub.royalcloud.qzz.io${match.thumbnail}`
-            : `https://orangehub.royalcloud.qzz.io/${match.thumbnail}`);
+            ? `https://orangehub-195.netlify.app${match.thumbnail}`
+            : `https://orangehub-195.netlify.app/${match.thumbnail}`);
       }
     }
   } catch {}
 
   const title = `${categoryTitle} Videos — Free Full HD | OrangeHub`;
   const description = `Watch the best ${categoryTitle} videos in 1080p Full HD on OrangeHub. 100% free streaming with zero ads and ultra-fast playback.`;
-  const canonicalUrl = `https://orangehub.royalcloud.qzz.io/category/${cleanSlug}`;
+  const canonicalUrl = `https://orangehub-195.netlify.app/category/${cleanSlug}`;
 
   return {
     title,

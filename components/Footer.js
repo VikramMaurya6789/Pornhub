@@ -40,6 +40,7 @@ export default function Footer() {
             <div className="flex flex-col gap-2.5">
               <span className="font-bold text-white mb-1">Legal &amp; Policy</span>
               <Link href="/dmca" className="text-neutral-400 hover:text-[#ff9900] transition-colors font-medium">DMCA Takedown</Link>
+              <Link href="/2257" className="text-neutral-400 hover:text-[#ff9900] transition-colors font-medium">2257 Statement</Link>
               <Link href="/privacy" className="text-neutral-400 hover:text-[#ff9900] transition-colors font-medium">Privacy Policy</Link>
               <Link href="/terms" className="text-neutral-400 hover:text-[#ff9900] transition-colors font-medium">Terms of Use</Link>
               <button

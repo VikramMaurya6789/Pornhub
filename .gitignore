@@ -2,3 +2,6 @@
 .next/
 .env*.local
 .open-next/
+
+# Local Netlify folder
+.netlify

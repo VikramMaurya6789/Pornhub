@@ -13,7 +13,7 @@ function escapeXml(unsafe) {
 }
 
 export async function GET(req) {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://orangehub.royalcloud.qzz.io';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://orangehub-195.netlify.app';
   const now = new Date().toISOString();
 
   const { searchParams } = new URL(req.url);

@@ -3,7 +3,7 @@ import scraper from '../../lib/scraper.js';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://orangehub.royalcloud.qzz.io';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://orangehub-195.netlify.app';
   let videos = [];
   try {
     const feed = await scraper.feed('newest', 1);

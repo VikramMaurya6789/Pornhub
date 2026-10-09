@@ -27,16 +27,19 @@ function SearchInner() {
   const q = sp.get('q') || '';
   const page = Math.max(1, parseInt(sp.get('page') || '1'));
   const sort = sp.get('sort') || 'relevant';
+  const duration = sp.get('duration') || 'all'; // all, short (<10min), medium (10-30min), long (>30min)
+  const hdOnly = sp.get('hd') === '1';
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
   const [sortOpen, setSortOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
 
   useEffect(() => {
     setData(null);
     setErr(null);
     (async () => {
       try {
-        const r = await fetch(`/api/search?q=${encodeURIComponent(q)}&page=${page}&sort=${sort}`, { cache: 'no-store' });
+        const r = await fetch(`/api/search?q=${encodeURIComponent(q)}&page=${page}&sort=${sort}&duration=${duration}&hd=${hdOnly ? '1' : '0'}`, { cache: 'no-store' });
         const j = await r.json();
         if (!r.ok) throw new Error(j.error || 'search failed');
         setData(j);
@@ -44,7 +47,12 @@ function SearchInner() {
         setErr(e.message);
       }
     })();
-  }, [q, page, sort]);
+  }, [q, page, sort, duration, hdOnly]);
+
+  const updateFilters = (newDuration, newHd) => {
+    setFilterOpen(false);
+    router.push(`/search?q=${encodeURIComponent(q)}&page=1&sort=${sort}&duration=${newDuration}&hd=${newHd ? '1' : '0'}`);
+  };
 
   // Close sort dropdown on outside click
   useEffect(() => {
@@ -118,6 +126,59 @@ function SearchInner() {
                       {opt.value === sort && <IconCheck size={16} className="text-[#ff9900]" />}
                     </button>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Filter Button */}
+          {data && videos.length > 0 && (
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setFilterOpen((o) => !o)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#161616] border border-[#2a2a2a] hover:border-[#ff9900]/50 text-sm font-semibold text-neutral-200 hover:text-white transition-colors cursor-pointer"
+              >
+                <span className="text-neutral-500 text-xs uppercase tracking-wider">Filter:</span>
+                <span className="text-[#ff9900]">
+                  {duration !== 'all' || hdOnly ? 'On' : 'Off'}
+                </span>
+                <IconChevronD size={14} className={`text-neutral-500 transition-transform ${filterOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {filterOpen && (
+                <div className="absolute right-0 top-[52px] z-50 w-56 bg-[#141414] border border-[#2a2a2a] rounded-xl shadow-2xl p-4 fade-in">
+                  <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Duration</p>
+                  <div className="space-y-1 mb-4">
+                    {[
+                      { value: 'all', label: 'Any length' },
+                      { value: 'short', label: 'Under 10 min' },
+                      { value: 'medium', label: '10 - 30 min' },
+                      { value: 'long', label: 'Over 30 min' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => updateFilters(opt.value, hdOnly)}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                          duration === opt.value
+                            ? 'bg-[#ff9900]/10 text-[#ff9900] font-semibold'
+                            : 'text-neutral-300 hover:bg-[#1f1f1f]'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Quality</p>
+                  <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg hover:bg-[#1f1f1f]">
+                    <input
+                      type="checkbox"
+                      checked={hdOnly}
+                      onChange={(e) => updateFilters(duration, e.target.checked)}
+                      className="w-4 h-4 rounded accent-[#ff9900]"
+                    />
+                    <span className="text-sm text-neutral-300">HD only</span>
+                  </label>
                 </div>
               )}
             </div>

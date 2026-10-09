@@ -63,6 +63,7 @@ function WatchContent() {
   const [toast, setToast] = useState('');
   const [playbackTime, setPlaybackTime] = useState(0);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [shareWithTimestamp, setShareWithTimestamp] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrWithTimestamp, setQrWithTimestamp] = useState(false);
 
@@ -84,6 +85,9 @@ function WatchContent() {
   const [commentAuthor, setCommentAuthor] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [commentLikes, setCommentLikes] = useState({});
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [expandedReplies, setExpandedReplies] = useState({});
 
   // View Counter state
   const [liveViews, setLiveViews] = useState(null);
@@ -684,7 +688,7 @@ function WatchContent() {
   };
 
   const getShareUrl = (withTimestamp = false) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://orangehub.royalcloud.qzz.io';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://orangehub-195.netlify.app';
     let url = `${origin}/watch/${vkey}`;
     if (withTimestamp && playbackTime > 0) {
       url += `?t=${Math.round(playbackTime)}`;
@@ -801,6 +805,43 @@ function WatchContent() {
       const next = current ? 0 : 1;
       return { ...prev, [cId]: next };
     });
+    // Persist to DB
+    fetch('/api/comments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ commentId: cId, vote: 'up' }),
+    }).catch(() => {});
+  };
+
+  const submitReply = async (parentId) => {
+    const text = replyText.trim();
+    if (!text) return;
+    const uid = localStorage.getItem('oh_uid') || 'anon-' + Date.now();
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vkey,
+          uid,
+          text,
+          author: localStorage.getItem('oh_username') || 'Anonymous',
+          parentId,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.comment) {
+        setComments(prev => [...prev, data.comment]);
+        setReplyText('');
+        setReplyingTo(null);
+        setExpandedReplies(prev => ({ ...prev, [parentId]: true }));
+        showToast('Reply posted!');
+      } else {
+        showToast(data.error || 'Failed to post reply');
+      }
+    } catch {
+      showToast('Failed to post reply');
+    }
   };
 
   if (err && !v) {
@@ -1045,12 +1086,12 @@ function WatchContent() {
 
                 {/* Share */}
                 <button
-                  onClick={() => copyShare(false)}
+                  onClick={() => setShowShareMenu(true)}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#1c1c1c] ring-1 ring-[#2c2c2c] text-neutral-200 hover:bg-[#2a2a2a] text-[13px] font-bold transition-all shrink-0"
                   title="Share Video"
                 >
                   <IconShare size={16} />
-                  <span>{copied ? 'Copied!' : 'Share'}</span>
+                  <span>Share</span>
                 </button>
 
 
@@ -1066,6 +1107,120 @@ function WatchContent() {
               </div>
 
                 {/* Autoplay & Theater are in the player settings/control bar — removed duplicates for clean UI */}
+              {/* Share Modal */}
+              {showShareMenu && (
+                <div
+                  className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+                  onClick={() => setShowShareMenu(false)}
+                >
+                  <div
+                    className="bg-[#141414] border border-[#2a2a2a] rounded-2xl p-6 max-w-md w-full shadow-2xl relative"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#222]">
+                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <IconShare size={18} className="text-[#ff9900]" /> Share Video
+                      </h3>
+                      <button
+                        onClick={() => setShowShareMenu(false)}
+                        className="text-neutral-400 hover:text-white p-1 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-[#222] transition-colors"
+                      >
+                        <IconX size={20} />
+                      </button>
+                    </div>
+
+                    {/* Link with timestamp option */}
+                    <label className="flex items-center gap-2 mb-4 cursor-pointer text-sm text-neutral-300">
+                      <input
+                        type="checkbox"
+                        checked={shareWithTimestamp}
+                        onChange={(e) => setShareWithTimestamp(e.target.checked)}
+                        className="w-4 h-4 rounded accent-[#ff9900]"
+                      />
+                      Start at current time ({Math.floor(playbackTime / 60)}:{String(Math.floor(playbackTime % 60)).padStart(2, '0')})
+                    </label>
+
+                    <div className="flex gap-2 mb-4">
+                      <input
+                        readOnly
+                        value={getShareUrl(shareWithTimestamp)}
+                        className="flex-1 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-neutral-300 truncate"
+                      />
+                      <button
+                        onClick={() => copyShare(shareWithTimestamp)}
+                        className="px-4 py-2.5 rounded-lg bg-[#ff9900] hover:bg-[#e68a00] text-black font-bold text-sm transition-colors shrink-0"
+                      >
+                        {copied ? 'Copied!' : 'Copy'}
+                      </button>
+                    </div>
+
+                    {/* Social share buttons */}
+                    <div className="grid grid-cols-4 gap-2 mb-4">
+                      <button
+                        onClick={() => {
+                          const url = getShareUrl(shareWithTimestamp);
+                          window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(v?.title || 'Watch on OrangeHub')}`, '_blank');
+                          setShowShareMenu(false);
+                        }}
+                        className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-[#1c1c1c] hover:bg-[#2a2a2a] transition-colors"
+                      >
+                        <span className="text-lg font-black text-white">𝕏</span>
+                        <span className="text-[11px] text-neutral-400">X</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          const url = getShareUrl(shareWithTimestamp);
+                          window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(v?.title || '')}`, '_blank');
+                          setShowShareMenu(false);
+                        }}
+                        className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-[#1c1c1c] hover:bg-[#2a2a2a] transition-colors"
+                      >
+                        <span className="text-lg font-black text-[#ff4500]">R</span>
+                        <span className="text-[11px] text-neutral-400">Reddit</span>
+                      </button>
+                      <button
+                        onClick={() => shareTelegram(shareWithTimestamp)}
+                        className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-[#1c1c1c] hover:bg-[#2a2a2a] transition-colors"
+                      >
+                        <span className="text-lg font-black text-[#229ED9]">T</span>
+                        <span className="text-[11px] text-neutral-400">Telegram</span>
+                      </button>
+                      <button
+                        onClick={() => shareWhatsApp(shareWithTimestamp)}
+                        className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-[#1c1c1c] hover:bg-[#2a2a2a] transition-colors"
+                      >
+                        <span className="text-lg font-black text-[#25D366]">W</span>
+                        <span className="text-[11px] text-neutral-400">WhatsApp</span>
+                      </button>
+                    </div>
+
+                    {/* Embed code */}
+                    <div className="border-t border-[#222] pt-4">
+                      <p className="text-sm font-bold text-white mb-2">Embed</p>
+                      <div className="flex gap-2">
+                        <input
+                          readOnly
+                          value={`<iframe src="${typeof window !== 'undefined' ? window.location.origin : ''}/embed/${vkey}" width="640" height="360" frameborder="0" allowfullscreen></iframe>`}
+                          className="flex-1 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-xs text-neutral-400 truncate font-mono"
+                        />
+                        <button
+                          onClick={async () => {
+                            const code = `<iframe src="${window.location.origin}/embed/${vkey}" width="640" height="360" frameborder="0" allowfullscreen></iframe>`;
+                            try {
+                              await navigator.clipboard.writeText(code);
+                              showToast('Embed code copied!');
+                            } catch { prompt('Copy embed code:', code); }
+                          }}
+                          className="px-4 py-2.5 rounded-lg bg-[#1c1c1c] ring-1 ring-[#2c2c2c] hover:bg-[#2a2a2a] text-white font-bold text-sm transition-colors shrink-0"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Save to Playlist Modal */}
               {showPlaylistModal && (
                 <div
@@ -1473,6 +1628,73 @@ function WatchContent() {
                 </div>
               </div>
 
+              {/* CHAPTERS */}
+              {v?.durationSec > 0 && (
+                <div className="mt-8 pt-8 border-t border-[#1f1f1f]">
+                  <h2 className="text-lg font-bold text-white mb-4">Chapters</h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    {(() => {
+                      const total = v.durationSec;
+                      const chapterCount = Math.min(8, Math.max(3, Math.floor(total / 300)));
+                      const chapterLen = Math.floor(total / chapterCount);
+                      return Array.from({ length: chapterCount }, (_, i) => {
+                        const start = i * chapterLen;
+                        const mm = Math.floor(start / 60);
+                        const ss = String(start % 60).padStart(2, '0');
+                        const labels = ['Intro', 'Build Up', 'Main Scene', 'Climax', 'Finale', 'Bonus', 'Extra', 'Outro'];
+                        return (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              if (videoRef.current) {
+                                videoRef.current.currentTime = start;
+                                videoRef.current.play();
+                              }
+                            }}
+                            className="flex items-center gap-3 p-3 rounded-xl bg-[#141414] border border-[#222] hover:border-[#ff9900]/50 hover:bg-[#1a1a1a] transition-colors text-left"
+                          >
+                            <span className="text-[#ff9900] font-mono text-sm font-bold shrink-0">
+                              {mm}:{ss}
+                            </span>
+                            <span className="text-sm text-neutral-300 truncate">
+                              {labels[i] || `Part ${i + 1}`}
+                            </span>
+                          </button>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              {/* CO-PERFORMERS */}
+              {v?.pornstars?.length > 1 && (
+                <div className="mt-8 pt-8 border-t border-[#1f1f1f]">
+                  <h2 className="text-lg font-bold text-white mb-4">Co-Performers</h2>
+                  <div className="flex gap-4 overflow-x-auto pb-2">
+                    {v.pornstars.slice(1, 9).map((star, i) => (
+                      <Link
+                        key={i}
+                        href={`/pornstar/${star.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
+                        className="flex flex-col items-center gap-2 shrink-0 group"
+                      >
+                        <div className="w-16 h-16 rounded-full overflow-hidden bg-[#1f1f1f] ring-2 ring-transparent group-hover:ring-[#ff9900] transition-all">
+                          <img
+                            src={`/api/avatar?name=${encodeURIComponent(star)}`}
+                            alt={star}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        </div>
+                        <span className="text-xs text-neutral-300 group-hover:text-[#ff9900] text-center max-w-[80px] truncate">
+                          {star}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* COMMENTS SECTION */}
               <div className="mt-8 pt-8 border-t border-[#1f1f1f]">
                 <div className="flex items-center justify-between mb-6">
@@ -1521,7 +1743,7 @@ function WatchContent() {
 
                 {/* Comments List */}
                 <div className="space-y-4">
-                  {(comments || []).map((c, idx) => {
+                  {(comments || []).filter(c => !c.parentId).map((c, idx) => {
                     const isLiked = !!commentLikes[c.id];
                     const likeTotal = (c.upvotes || 0) + (isLiked ? 1 : 0);
 
@@ -1566,7 +1788,61 @@ function WatchContent() {
                               <IconThumbUp size={14} className={isLiked ? 'fill-[#ff9900]' : ''} />
                               <span>{likeTotal}</span>
                             </button>
+                            <button
+                              onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
+                              className="flex items-center gap-1.5 p-2 -m-2 rounded-lg text-neutral-400 hover:text-white transition-colors font-medium">
+                              <IconMessage size={14} />
+                              <span>Reply</span>
+                            </button>
+                            {(comments || []).filter(r => r.parentId === c.id).length > 0 && (
+                              <button
+                                onClick={() => setExpandedReplies(prev => ({ ...prev, [c.id]: !prev[c.id] }))}
+                                className="text-[#ff9900] hover:underline font-medium p-2 -m-2">
+                                {expandedReplies[c.id] ? 'Hide' : 'View'} {(comments || []).filter(r => r.parentId === c.id).length} {((comments || []).filter(r => r.parentId === c.id).length === 1) ? 'reply' : 'replies'}
+                              </button>
+                            )}
                           </div>
+
+                          {/* Reply form */}
+                          {replyingTo === c.id && (
+                            <div className="mt-3 flex gap-2">
+                              <input
+                                value={replyText}
+                                onChange={(e) => setReplyText(e.target.value)}
+                                placeholder={`Reply to ${c?.user || 'user'}...`}
+                                className="flex-1 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#ff9900]"
+                                onKeyDown={(e) => { if (e.key === 'Enter') submitReply(c.id); }}
+                              />
+                              <button
+                                onClick={() => submitReply(c.id)}
+                                className="px-4 py-2 rounded-lg bg-[#ff9900] hover:bg-[#e68a00] text-black font-bold text-sm transition-colors"
+                              >
+                                Reply
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Nested replies */}
+                          {expandedReplies[c.id] && (
+                            <div className="mt-3 ml-4 pl-4 border-l-2 border-[#2a2a2a] space-y-3">
+                              {(comments || []).filter(r => r.parentId === c.id).map((reply) => (
+                                <div key={reply.id} className="flex gap-3">
+                                  <div className="w-8 h-8 rounded-full overflow-hidden bg-[#1f1f1f] shrink-0 flex items-center justify-center">
+                                    <span className="text-xs font-bold text-[#ff9900]">
+                                      {(reply?.user || 'U').charAt(0).toUpperCase()}
+                                    </span>
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-bold text-xs text-white">{reply?.user || 'User'}</span>
+                                      <span className="text-[11px] text-neutral-500">• {reply.date}</span>
+                                    </div>
+                                    <p className="text-sm text-neutral-300 mt-1 break-words">{reply.message}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

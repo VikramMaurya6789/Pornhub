@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   IconSearch, IconHome, IconFlame, IconEye, IconStar, IconGrid,
   IconMenu, IconX, IconHeart, IconClock, IconTag, IconSparkles, IconHistory, IconUser,
-  IconBell, IconThumbUp
+  IconBell, IconThumbUp, IconVideo, IconPlay, IconShare, IconMessage
 } from './Icons';
 import { fetchMe, getCachedUser, openAuthModal, signOut as authSignOut, subscribeAuth } from '../lib/auth-client';
 
@@ -17,6 +17,10 @@ const NAV = [
   { href: '/list/top_rated', label: 'Top Rated', icon: IconStar },
   { href: '/categories', label: 'Categories', icon: IconGrid },
   { href: '/models', label: 'Stars', icon: IconUser },
+  { href: 'https://www.livehdcams.com', label: 'Live Cams', icon: IconVideo, external: true },
+  { href: '/shorties', label: 'Shorties', icon: IconPlay },
+  { href: '/photos', label: 'Photos', icon: IconShare },
+  { href: '/community', label: 'Community', icon: IconMessage },
   { href: '/subscriptions', label: 'Subscriptions', icon: IconBell },
   { href: '/favorites', label: 'Favorites', icon: IconHeart },
   { href: '/liked', label: 'Liked', icon: IconThumbUp },
@@ -275,14 +279,27 @@ export default function Header() {
         <div className="hidden lg:flex items-center gap-2 ml-auto">
           <nav className="flex items-center gap-1">
             {NAV.map((n) => (
-              <Link
-                key={n.href}
-                href={n.href}
-                className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-[#1c1c1c] transition-colors whitespace-nowrap shrink-0"
-              >
-                <n.icon size={15} />
-                <span>{n.label}</span>
-              </Link>
+              n.external ? (
+                <a
+                  key={n.href}
+                  href={n.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-[#1c1c1c] transition-colors whitespace-nowrap shrink-0"
+                >
+                  <n.icon size={15} />
+                  <span>{n.label}</span>
+                </a>
+              ) : (
+                <Link
+                  key={n.href}
+                  href={n.href}
+                  className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm text-neutral-300 hover:text-white hover:bg-[#1c1c1c] transition-colors whitespace-nowrap shrink-0"
+                >
+                  <n.icon size={15} />
+                  <span>{n.label}</span>
+                </Link>
+              )
             ))}
           </nav>
 
@@ -458,15 +475,29 @@ export default function Header() {
             </button>
           ) : null}
           {NAV.map((n) => (
-            <Link
-              key={n.href}
-              href={n.href}
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-2 py-3 text-neutral-200 hover:text-[#ff9900] border-b border-[#161616] last:border-0 transition-colors"
-            >
-              <n.icon size={18} />
-              <span className="text-[15px] font-medium">{n.label}</span>
-            </Link>
+            n.external ? (
+              <a
+                key={n.href}
+                href={n.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 px-2 py-3 text-neutral-200 hover:text-[#ff9900] border-b border-[#161616] last:border-0 transition-colors"
+              >
+                <n.icon size={18} />
+                <span className="text-[15px] font-medium">{n.label}</span>
+              </a>
+            ) : (
+              <Link
+                key={n.href}
+                href={n.href}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 px-2 py-3 text-neutral-200 hover:text-[#ff9900] border-b border-[#161616] last:border-0 transition-colors"
+              >
+                <n.icon size={18} />
+                <span className="text-[15px] font-medium">{n.label}</span>
+              </Link>
+            )
           ))}
         </nav>
       )}

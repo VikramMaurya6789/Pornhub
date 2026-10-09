@@ -4,7 +4,7 @@ import { getAllVideos } from '../../lib/sitemapHelper.js';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://orangehub.royalcloud.qzz.io';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://orangehub-195.netlify.app';
   const now = new Date().toISOString();
 
   const all = await getAllVideos();

@@ -15,7 +15,7 @@ export const viewport = {
 };
 
 export const metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://orangehub.royalcloud.qzz.io'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://orangehub-195.netlify.app'),
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
@@ -39,11 +39,11 @@ export const metadata = {
   openGraph: {
     title: 'OrangeHub — Free HD Videos & Trending Movies',
     description: 'Watch 1080p Full HD trending videos, top models & exclusive movies on OrangeHub. 100% free streaming with zero ads and ultra-fast playback.',
-    url: 'https://orangehub.royalcloud.qzz.io',
+    url: 'https://orangehub-195.netlify.app',
     siteName: 'OrangeHub',
     images: [
       {
-        url: 'https://orangehub.royalcloud.qzz.io/og-banner.png',
+        url: 'https://orangehub-195.netlify.app/og-banner.png',
         width: 1200,
         height: 630,
         alt: 'OrangeHub — Free 1080p HD Streaming Platform',
@@ -56,7 +56,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'OrangeHub — Free HD Videos & Trending Movies',
     description: 'Watch 1080p Full HD trending videos, top models & exclusive movies on OrangeHub. 100% free streaming with zero ads and ultra-fast playback.',
-    images: ['https://orangehub.royalcloud.qzz.io/og-banner.png'],
+    images: ['https://orangehub-195.netlify.app/og-banner.png'],
     creator: '@OrangeHub',
   },
   robots: {
@@ -82,7 +82,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://orangehub.royalcloud.qzz.io" />
+        <link rel="preconnect" href="https://orangehub-195.netlify.app" />
         <link rel="preconnect" href="https://ei.phncdn.com" crossOrigin="" />
         <link rel="dns-prefetch" href="https://ei.phncdn.com" />
         <link rel="dns-prefetch" href="https://di.phncdn.com" />

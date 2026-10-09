@@ -4,7 +4,7 @@ export const metadata = {
   openGraph: {
     title: 'All Categories & Tags — OrangeHub',
     description: 'Explore all popular adult video categories, 60FPS HD, amateur, POV and trending tags on OrangeHub.',
-    url: 'https://orangehub.royalcloud.qzz.io/categories',
+    url: 'https://orangehub-195.netlify.app/categories',
     images: ['/og-image.jpg'],
   },
   twitter: {

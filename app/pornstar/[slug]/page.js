@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import VideoCard from '../../../components/VideoCard';
 import Pagination, { PornstarAvatar } from '../../../components/UI';
-import { IconStar, IconFlame, IconChevronL } from '../../../components/Icons';
+import { IconStar, IconFlame, IconChevronL, IconPlay } from '../../../components/Icons';
 import FollowPornstarButton from '../../../components/FollowPornstarButton';
 import scraper from '../../../lib/scraper.js';
 import { TOP_100_MODELS } from '../../../lib/leaderboardData.js';
@@ -14,20 +14,20 @@ export async function generateMetadata({ params }) {
   const slug = String(rawSlug).toLowerCase().replace(/[^a-z0-9_-]/g, '');
   const name = slug.replace(/[-_]/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 
-  let avatarUrl = `https://orangehub.royalcloud.qzz.io/api/avatar?name=${encodeURIComponent(name)}`;
+  let avatarUrl = `https://orangehub-195.netlify.app/api/avatar?name=${encodeURIComponent(name)}`;
   try {
     await scraper.warmup();
     const data = await scraper.pornstarVideos(slug, 1).catch(() => null);
     if (data?.avatar) {
       avatarUrl = data.avatar.startsWith('http')
-        ? `https://orangehub.royalcloud.qzz.io/api/img?u=${encodeURIComponent(data.avatar)}`
-        : `https://orangehub.royalcloud.qzz.io${data.avatar.startsWith('/') ? '' : '/'}${data.avatar}`;
+        ? `https://orangehub-195.netlify.app/api/img?u=${encodeURIComponent(data.avatar)}`
+        : `https://orangehub-195.netlify.app${data.avatar.startsWith('/') ? '' : '/'}${data.avatar}`;
     }
   } catch {}
 
   const title = `${name} — Free Full HD Videos & Scenes | OrangeHub`;
   const description = `Watch full 1080p HD videos starring ${name} on OrangeHub. Stream all exclusive scenes and latest releases in high definition with zero ads.`;
-  const canonicalUrl = `https://orangehub.royalcloud.qzz.io/pornstar/${slug}`;
+  const canonicalUrl = `https://orangehub-195.netlify.app/pornstar/${slug}`;
 
   return {
     title,
@@ -130,16 +130,35 @@ export default async function PornstarPage({ params, searchParams }) {
             </span>
             <FollowPornstarButton slug={slug} name={name} avatar={avatar} />
           </div>
-          <p className="mt-2.5 text-sm text-neutral-400 max-w-2xl leading-relaxed">
-            Watch full 1080p HD videos starring {name}. Stream all exclusive scenes and latest releases in high definition with zero ads.
-          </p>
+          {data?.bio ? (
+            <p className="mt-2.5 text-sm text-neutral-400 max-w-2xl leading-relaxed">
+              {data.bio}
+            </p>
+          ) : (
+            <p className="mt-2.5 text-sm text-neutral-400 max-w-2xl leading-relaxed">
+              Watch full 1080p HD videos starring {name}. Stream all exclusive scenes and latest releases in high definition with zero ads.
+            </p>
+          )}
           <div className="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-2.5 text-xs font-semibold text-neutral-300">
+            {data?.rank && (
+              <div className="flex items-center gap-1.5 bg-white/[0.04] px-3 py-1.5 rounded-lg border border-white/[0.06]">
+                <IconStar size={14} className="text-[#ff9900]" />
+                <span>Rank #{data.rank}</span>
+              </div>
+            )}
+            {data?.subscribers && (
+              <div className="flex items-center gap-1.5 bg-white/[0.04] px-3 py-1.5 rounded-lg border border-white/[0.06]">
+                <span>{data.subscribers} Subscribers</span>
+              </div>
+            )}
+            {data?.totalViews && (
+              <div className="flex items-center gap-1.5 bg-white/[0.04] px-3 py-1.5 rounded-lg border border-white/[0.06]">
+                <span>{data.totalViews} Views</span>
+              </div>
+            )}
             <div className="flex items-center gap-1.5 bg-white/[0.04] px-3 py-1.5 rounded-lg border border-white/[0.06]">
               <IconFlame size={14} className="text-[#ff9900]" />
-              <span>{videos.length ? `${videos.length}+ Videos on page` : 'Full HD Collection'}</span>
-            </div>
-            <div className="flex items-center gap-1.5 bg-white/[0.04] px-3 py-1.5 rounded-lg border border-white/[0.06]">
-              <span className="text-[#ff9900]">Page {page}</span>
+              <span>{videos.length ? `${videos.length}+ Videos` : 'Full HD Collection'}</span>
             </div>
           </div>
         </div>
@@ -212,6 +231,16 @@ export default async function PornstarPage({ params, searchParams }) {
         </div>
       ) : (
         <>
+          {videos.length > 0 && videos[0]?.vkey && (
+            <div className="mb-6">
+              <Link
+                href={`/watch/${videos[0].vkey}?autoplay=1&playlist=pornstar-${slug}`}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#ff9900] hover:bg-[#e68a00] text-black font-bold text-sm transition-colors"
+              >
+                <IconPlay size={16} /> Play All Videos
+              </Link>
+            </div>
+          )}
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-x-4 gap-y-7">
             {videos.map((v, i) => (
               <VideoCard key={v.vkey || i} v={v} index={i} />

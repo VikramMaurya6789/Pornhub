@@ -36,13 +36,13 @@ export async function generateMetadata({ params }) {
   const durText = video.duration && video.duration !== '0:00' ? ` (${video.duration})` : '';
   const description = `Watch "${video.title}"${durText}${authorText} in 1080p Full HD with zero ads on OrangeHub.`;
 
-  let imageUrl = 'https://orangehub.royalcloud.qzz.io/og-banner.png';
+  let imageUrl = 'https://orangehub-195.netlify.app/og-banner.png';
   if (video.thumbnail) {
     imageUrl = video.thumbnail.startsWith('http')
-      ? `https://orangehub.royalcloud.qzz.io/api/img?u=${encodeURIComponent(video.thumbnail)}`
+      ? `https://orangehub-195.netlify.app/api/img?u=${encodeURIComponent(video.thumbnail)}`
       : (video.thumbnail.startsWith('/')
-        ? `https://orangehub.royalcloud.qzz.io${video.thumbnail}`
-        : `https://orangehub.royalcloud.qzz.io/${video.thumbnail}`);
+        ? `https://orangehub-195.netlify.app${video.thumbnail}`
+        : `https://orangehub-195.netlify.app/${video.thumbnail}`);
   }
 
   const fullTitle = `${title} — OrangeHub`;
@@ -53,7 +53,7 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: fullTitle,
       description,
-      url: `https://orangehub.royalcloud.qzz.io/watch/${vkey}`,
+      url: `https://orangehub-195.netlify.app/watch/${vkey}`,
       siteName: 'OrangeHub',
       type: 'article',
       images: [
@@ -117,13 +117,13 @@ export default async function WatchLayout({ children, params }) {
     ? `Watch "${video.title}" in 1080p Full HD with zero ads on OrangeHub.`
     : 'Watch trending full length adult video in 1080p HD on OrangeHub.';
 
-  let imageUrl = 'https://orangehub.royalcloud.qzz.io/og-banner.png';
+  let imageUrl = 'https://orangehub-195.netlify.app/og-banner.png';
   if (video.thumbnail) {
     imageUrl = video.thumbnail.startsWith('http')
-      ? `https://orangehub.royalcloud.qzz.io/api/img?u=${encodeURIComponent(video.thumbnail)}`
+      ? `https://orangehub-195.netlify.app/api/img?u=${encodeURIComponent(video.thumbnail)}`
       : (video.thumbnail.startsWith('/')
-        ? `https://orangehub.royalcloud.qzz.io${video.thumbnail}`
-        : `https://orangehub.royalcloud.qzz.io/${video.thumbnail}`);
+        ? `https://orangehub-195.netlify.app${video.thumbnail}`
+        : `https://orangehub-195.netlify.app/${video.thumbnail}`);
   }
 
   let viewsCount = 50000;
@@ -142,8 +142,8 @@ export default async function WatchLayout({ children, params }) {
     thumbnailUrl: [imageUrl],
     uploadDate: '2026-01-01T00:00:00.000Z',
     duration: toIsoDuration(video.duration),
-    contentUrl: `https://orangehub.royalcloud.qzz.io/watch/${vkey}`,
-    embedUrl: `https://orangehub.royalcloud.qzz.io/watch/${vkey}`,
+    contentUrl: `https://orangehub-195.netlify.app/watch/${vkey}`,
+    embedUrl: `https://orangehub-195.netlify.app/watch/${vkey}`,
     interactionStatistic: {
       '@type': 'InteractionCounter',
       interactionType: { '@type': 'https://schema.org/WatchAction' },

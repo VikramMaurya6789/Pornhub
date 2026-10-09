@@ -83,7 +83,7 @@ export default function DmcaPage() {
                 required
                 value={videoUrl}
                 onChange={(e) => setVideoUrl(e.target.value)}
-                placeholder="https://orangehub.royalcloud.qzz.io/watch/... or upstream URL"
+                placeholder="https://orangehub-195.netlify.app/watch/... or upstream URL"
                 className="w-full bg-[#181818] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#ff9900]"
               />
             </div>

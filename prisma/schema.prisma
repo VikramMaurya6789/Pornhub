@@ -102,10 +102,13 @@ model Comment {
   author    String   @default("Anonymous")
   message   String
   upvotes   Int      @default(0)
+  downvotes Int      @default(0)
+  parentId  String?
   createdAt DateTime @default(now())
 
   @@index([vkey, createdAt])
   @@index([uid, createdAt])
+  @@index([parentId])
 }
 
 model Report {
