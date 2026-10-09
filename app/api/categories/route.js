@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import scraper from '../../../lib/scraper.js';
 
-const proxied = (v) => v ? `/api/img?u=${encodeURIComponent(v)}` : null;
+const proxied = (v) => v ? `/api/img?u=${encodeURIComponent(v)}&v=3` : null;
 
 export async function GET() {
   try {

@@ -6,7 +6,7 @@ import FollowPornstarButton from '../../../components/FollowPornstarButton';
 import scraper from '../../../lib/scraper.js';
 import { TOP_100_MODELS } from '../../../lib/leaderboardData.js';
 
-const proxied = (v) => (v ? `/api/img?u=${encodeURIComponent(v)}` : null);
+const proxied = (v) => (v ? `/api/img?u=${encodeURIComponent(v)}&v=3` : null);
 
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;

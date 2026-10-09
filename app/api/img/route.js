@@ -30,7 +30,9 @@ export async function GET(req) {
         headers: {
           'User-Agent': UA,
           'Referer': 'https://www.pornhub.com/',
-          'Accept': 'image/avif,image/webp,image/apng,image/*,*/*',
+          // Prefer JPEG/WebP over AVIF for maximum browser compatibility
+          // AVIF causes "same thumbnail" issues on some browsers/devices
+          'Accept': 'image/webp,image/jpeg,image/png,image/*,*/*;q=0.8',
         },
         redirect: 'follow',
         signal: ctrl.signal,
