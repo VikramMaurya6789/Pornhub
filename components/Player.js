@@ -890,6 +890,19 @@ export default function Player({
         abrBandWidthFactor: 0.9,
         abrBandWidthUpFactor: 0.6,
 
+        // Start with a realistic bandwidth estimate (2 Mbps) instead of the
+        // hls.js default 500 kbps. This skips the slow probe-up from 240p and
+        // starts near 720p directly on decent networks — less early switching,
+        // smoother start. ABR still corrects down quickly if network is slow.
+        abrEwmaDefaultEstimate: 2000000,
+
+        // Faster recovery when a segment/playlist request fails: retry after
+        // 500ms instead of the 1000ms default, so a single bad segment
+        // doesn't turn into a visible spinner.
+        fragLoadingRetryDelay: 500,
+        manifestLoadingRetryDelay: 500,
+        levelLoadingRetryDelay: 500,
+
         // Seek & buffer hole configuration
         maxSeekHole: 2, // Max buffer hole size to seek over (seconds)
         seekHoleNudgeDuration: 0.05, // Step size when nudging over a seek hole
