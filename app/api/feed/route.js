@@ -3,7 +3,7 @@ import scraper from '../../../lib/scraper.js';
 import prisma from '../../../lib/db.js';
 import { parseViewsNumber, formatMaxViews, parseDurationSec } from '../../../lib/format.js';
 
-const proxied = (v) => (v ? `/api/img?u=${encodeURIComponent(v)}&v=3` : null);
+const proxied = (v) => v || null; // Direct URL - VideoCard tries direct first, falls back to /api/img on error
 
 function shapeCard(v) {
   return {

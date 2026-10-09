@@ -593,7 +593,7 @@ export default function Player({
 
       if (poster) {
         const thumbUrl = poster.startsWith('http')
-          ? (poster.includes('/api/img') ? poster : `${window.location.origin}/api/img?u=${encodeURIComponent(poster)}&v=3`)
+          ? (poster.includes('/api/img') ? poster : `${window.location.origin}/api/img?u=${encodeURIComponent(poster)}&v=4`)
           : new URL(poster, window.location.origin).href;
         mediaInfo.metadata.images = [new window.chrome.cast.Image(thumbUrl)];
       }
@@ -1445,7 +1445,7 @@ export default function Player({
           mediaInfo.metadata.title = title || 'OrangeHub Video';
           if (poster) {
             const thumbUrl = poster.startsWith('http')
-              ? (poster.includes('/api/img') ? poster : `${window.location.origin}/api/img?u=${encodeURIComponent(poster)}&v=3`)
+              ? (poster.includes('/api/img') ? poster : `${window.location.origin}/api/img?u=${encodeURIComponent(poster)}&v=4`)
               : new URL(poster, window.location.origin).href;
             mediaInfo.metadata.images = [new window.chrome.cast.Image(thumbUrl)];
           }

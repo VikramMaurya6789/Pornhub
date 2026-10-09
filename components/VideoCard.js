@@ -81,7 +81,7 @@ export default function VideoCard({ v, index = 0 }) {
     if (!retriedRef.current && v.thumbnail) {
       retriedRef.current = true;
       if (!String(thumbSrc || '').startsWith('/api/img')) {
-        setThumbSrc(`/api/img?u=${encodeURIComponent(v.thumbnail)}&v=3`);
+        setThumbSrc(`/api/img?u=${encodeURIComponent(v.thumbnail)}&v=4`);
         return;
       }
     }

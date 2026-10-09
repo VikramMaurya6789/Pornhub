@@ -15,7 +15,7 @@ export async function OPTIONS() {
   });
 }
 
-const proxied = (v) => (v ? `/api/img?u=${encodeURIComponent(v)}&v=3` : null);
+const proxied = (v) => v || null; // Direct URL - VideoCard tries direct first, falls back to /api/img on error
 
 export async function GET(req) {
   try {
