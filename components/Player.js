@@ -890,11 +890,11 @@ export default function Player({
         abrBandWidthFactor: 0.9,
         abrBandWidthUpFactor: 0.6,
 
-        // Start with a realistic bandwidth estimate (2 Mbps) instead of the
-        // hls.js default 500 kbps. This skips the slow probe-up from 240p and
-        // starts near 720p directly on decent networks — less early switching,
-        // smoother start. ABR still corrects down quickly if network is slow.
-        abrEwmaDefaultEstimate: 2000000,
+        // Start with a high bandwidth estimate (12 Mbps) instead of the
+        // hls.js default 500 kbps. This starts playback directly at 1080p on
+        // fast networks instead of slowly probing up from 240p — instant best
+        // quality. ABR still steps down quickly if the network can't keep up.
+        abrEwmaDefaultEstimate: 12000000,
 
         // Faster recovery when a segment/playlist request fails: retry after
         // 500ms instead of the 1000ms default, so a single bad segment
