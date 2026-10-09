@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-  const xml = generateVideoSitemapXml(page, 1000);
+  const xml = await generateVideoSitemapXml(page, 1000);
 
   return new NextResponse(xml, {
     status: 200,

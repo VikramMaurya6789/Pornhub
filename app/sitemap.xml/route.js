@@ -7,7 +7,7 @@ export async function GET() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://orangehub.royalcloud.qzz.io';
   const now = new Date().toISOString();
 
-  const all = getAllVideos();
+  const all = await getAllVideos();
   const total = all.length;
   const pageSize = 1000;
   const pagesCount = Math.max(1, Math.min(50, Math.ceil(total / pageSize)));

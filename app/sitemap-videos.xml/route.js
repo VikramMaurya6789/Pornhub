@@ -4,7 +4,7 @@ import { generateVideoSitemapXml } from '../../lib/sitemapHelper.js';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const xml = generateVideoSitemapXml(1, 1000);
+  const xml = await generateVideoSitemapXml(1, 1000);
 
   return new NextResponse(xml, {
     status: 200,

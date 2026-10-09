@@ -119,4 +119,15 @@ const nextConfig = {
     ];
   },
 };
+// Stub out iconv-lite's 580KB encoding tables (x3 in bundle).
+// The app only handles UTF-8; cheerio always receives strings.
+// Next 16 uses Turbopack: use turbopack.resolveAlias (webpack key removed).
+nextConfig.turbopack = {
+  ...nextConfig.turbopack,
+  resolveAlias: {
+    ...nextConfig.turbopack?.resolveAlias,
+    'iconv-lite': './lib/iconv-stub.js',
+  },
+};
+
 export default nextConfig;

@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { SEED_VIDEOS } from '../../../lib/seedData';
+import { getSeedVideoByVkey } from '../../../lib/seedData';
 import scraper from '../../../lib/scraper.js';
 
 export async function generateMetadata({ params }) {
@@ -15,7 +15,7 @@ export async function generateMetadata({ params }) {
 
   let video = null;
   try {
-    const seed = Array.isArray(SEED_VIDEOS) ? SEED_VIDEOS.find((v) => v.vkey === vkey) : null;
+    const seed = await getSeedVideoByVkey(vkey).catch(() => null);
     if (seed) {
       video = seed;
     } else if (vkey) {
@@ -99,7 +99,7 @@ export default async function WatchLayout({ children, params }) {
 
   let video = null;
   try {
-    const seed = Array.isArray(SEED_VIDEOS) ? SEED_VIDEOS.find((v) => v.vkey === vkey) : null;
+    const seed = await getSeedVideoByVkey(vkey).catch(() => null);
     if (seed) {
       video = seed;
     } else if (vkey) {
