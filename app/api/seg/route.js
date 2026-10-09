@@ -125,10 +125,13 @@ export async function GET(req) {
       'Content-Type': ct,
       'Accept-Ranges': 'bytes',
       'Vary': 'Range, Accept-Encoding',
-      // No edge caching for segments: stale/corrupt cached segments cause
-      // video jumping (frames from wrong positions). Fresh fetch every time
-      // ensures correct bytes. The Mumbai region keeps latency low.
-      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      // Edge-cache segments: VOD segment bytes are immutable (same URL = same
+      // bytes forever), so caching is safe and it massively cuts Fast Origin
+      // Transfer — every cache hit avoids a function->edge transfer. This is
+      // what keeps the site alive on Vercel's quota. (Previously no-store to
+      // dodge a suspected stale-segment jumping issue; root cause was never
+      // confirmed. If frame jumping returns, shorten s-maxage first.)
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
       ...CORS_HEADERS,
     };
     if (headers['content-length']) outHeaders['Content-Length'] = headers['content-length'];
