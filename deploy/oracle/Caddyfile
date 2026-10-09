@@ -1,0 +1,6 @@
+# Caddy reverse proxy — automatic HTTPS via Let's Encrypt.
+# SITE_HOST is read from the environment at container start (see .env.example).
+# Point your domain's A record at the VM's public IP, then Caddy handles TLS.
+{$SITE_HOST} {
+	reverse_proxy app:3000
+}

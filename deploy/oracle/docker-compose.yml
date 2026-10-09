@@ -1,0 +1,66 @@
+# OrangeHub production stack for Oracle Cloud Always Free (ARM).
+# Usage: copy .env.example to .env, fill values, then `docker compose up -d --build`
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: orangehub
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: orangehub
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orangehub"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: ../..
+      dockerfile: deploy/oracle/Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: ${SITE_URL}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Local Postgres (all the variable names the app reads as fallbacks)
+      POSTGRES_URL: postgres://orangehub:${DB_PASSWORD}@db:5432/orangehub
+      PORNHUB_POSTGRES_URL: postgres://orangehub:${DB_PASSWORD}@db:5432/orangehub
+      POSTGRES_PRISMA_DATABASE_URL: postgres://orangehub:${DB_PASSWORD}@db:5432/orangehub
+      POSTGRES_DATABASE_URL: postgres://orangehub:${DB_PASSWORD}@db:5432/orangehub
+      PORNHUB_PRISMA_DATABASE_URL: postgres://orangehub:${DB_PASSWORD}@db:5432/orangehub
+      PORNHUB_DATABASE_URL: postgres://orangehub:${DB_PASSWORD}@db:5432/orangehub
+      # Auth / app config (from .env — never commit real values)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+      NEXT_PUBLIC_SITE_URL: ${SITE_URL}
+      CRON_SECRET: ${CRON_SECRET:-}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
+      PROXY_URL: ${PROXY_URL:-}
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      SITE_HOST: ${SITE_HOST}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on:
+      - app
+
+volumes:
+  pgdata:
+  caddydata:
+  caddyconfig:
