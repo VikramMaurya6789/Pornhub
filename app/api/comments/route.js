@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-
-const rateLimitMap = new Map(); // uid -> timestamp
-const commentsStore = new Map(); // vkey -> Array of comments
+import prisma from '../../../lib/db.js';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -19,25 +17,62 @@ function escapeHtml(str) {
     .trim();
 }
 
+function timeAgo(date) {
+  const s = Math.max(1, Math.floor((Date.now() - new Date(date).getTime()) / 1000));
+  if (s < 60) return 'Just now';
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d}d ago`;
+  const mo = Math.floor(d / 30);
+  if (mo < 12) return `${mo}mo ago`;
+  return `${Math.floor(mo / 12)}y ago`;
+}
+
+function shapeComment(c) {
+  const author = c.author || 'Anonymous';
+  return {
+    id: c.id,
+    vkey: c.vkey,
+    user: author,
+    avatar: `/api/avatar?name=${encodeURIComponent(author)}`,
+    date: timeAgo(c.createdAt),
+    message: c.message,
+    upvotes: c.upvotes || 0,
+    createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : c.createdAt,
+  };
+}
+
+function dbAvailable() {
+  return !!(prisma && prisma.comment);
+}
+
 export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 204,
-    headers: CORS_HEADERS,
-  });
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
 }
 
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const vkey = searchParams.get('vkey');
-
     if (!vkey) {
       return NextResponse.json({ error: 'vkey required' }, { status: 400, headers: CORS_HEADERS });
     }
 
-    const list = commentsStore.get(vkey) || [];
+    if (!dbAvailable()) {
+      return NextResponse.json({ comments: [], db: false }, { status: 200, headers: CORS_HEADERS });
+    }
+
+    const rows = await prisma.comment.findMany({
+      where: { vkey },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+
     return NextResponse.json(
-      { comments: list },
+      { comments: rows.map(shapeComment) },
       {
         headers: {
           'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30',
@@ -46,6 +81,7 @@ export async function GET(req) {
       }
     );
   } catch (err) {
+    console.error('[API /api/comments] GET error:', err.message);
     return NextResponse.json({ comments: [] }, { status: 200, headers: CORS_HEADERS });
   }
 }
@@ -59,70 +95,67 @@ export async function POST(req) {
 
     const vkey = String(body.vkey || '').trim();
     const uid = String(body.uid || '').trim();
+    const userId = typeof body.userId === 'string' ? body.userId.trim().slice(0, 64) : null;
     const rawText = String(body.text || body.message || '').trim();
     const rawAuthor = String(body.author || body.user || '').trim();
 
     if (!vkey) {
       return NextResponse.json({ error: 'vkey is required' }, { status: 400, headers: CORS_HEADERS });
     }
-
-    if (!uid) {
+    if (!uid && !userId) {
       return NextResponse.json({ error: 'uid is required' }, { status: 400, headers: CORS_HEADERS });
     }
-
     if (!rawText) {
       return NextResponse.json({ error: 'Comment text cannot be empty' }, { status: 400, headers: CORS_HEADERS });
     }
-
     if (rawText.length > 500) {
       return NextResponse.json({ error: 'Comment must be 500 characters or less' }, { status: 400, headers: CORS_HEADERS });
     }
 
-    // Rate limit: 1 comment per 30 seconds per uid
-    const now = Date.now();
-    const lastPost = rateLimitMap.get(uid);
-    if (lastPost && now - lastPost < 30000) {
-      const waitSec = Math.ceil((30000 - (now - lastPost)) / 1000);
+    if (!dbAvailable()) {
       return NextResponse.json(
-        { error: `Please wait ${waitSec}s before posting another comment` },
+        { error: 'Comments are temporarily unavailable. Please try again later.' },
+        { status: 503, headers: CORS_HEADERS }
+      );
+    }
+
+    // DB-backed rate limit: 1 comment per 30 seconds per uid
+    const rateKey = uid || userId;
+    const recent = await prisma.comment.findFirst({
+      where: {
+        uid: rateKey,
+        createdAt: { gte: new Date(Date.now() - 30000) },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true },
+    });
+    if (recent) {
+      const waitSec = Math.ceil((recent.createdAt.getTime() + 30000 - Date.now()) / 1000);
+      return NextResponse.json(
+        { error: `Please wait ${Math.max(1, waitSec)}s before posting another comment` },
         { status: 429, headers: CORS_HEADERS }
       );
     }
 
-    rateLimitMap.set(uid, now);
+    const author = escapeHtml(rawAuthor.slice(0, 40)) || 'Anonymous';
+    const message = escapeHtml(rawText);
 
-    // Clean up old rate limits
-    if (rateLimitMap.size > 10000) {
-      for (const [k, ts] of rateLimitMap.entries()) {
-        if (now - ts > 60000) rateLimitMap.delete(k);
-      }
-    }
-
-    const sanitizedText = escapeHtml(rawText);
-    const sanitizedAuthor = escapeHtml(rawAuthor.slice(0, 40)) || 'Anonymous';
-
-    const newComment = {
-      id: `c_${now}_${Math.random().toString(36).substring(2, 7)}`,
-      vkey,
-      uid,
-      user: sanitizedAuthor,
-      avatar: `/api/avatar?name=${encodeURIComponent(sanitizedAuthor)}`,
-      date: 'Just now',
-      message: sanitizedText,
-      upvotes: 0,
-      createdAt: new Date().toISOString(),
-    };
-
-    const existing = commentsStore.get(vkey) || [];
-    const updated = [newComment, ...existing].slice(0, 100); // newest first, cap at 100 per video
-    commentsStore.set(vkey, updated);
+    const created = await prisma.comment.create({
+      data: {
+        vkey,
+        uid: uid || null,
+        userId: userId || null,
+        author,
+        message,
+      },
+    });
 
     return NextResponse.json(
-      { success: true, comment: newComment },
+      { success: true, comment: shapeComment(created) },
       { status: 201, headers: CORS_HEADERS }
     );
   } catch (err) {
-    console.error('[API /api/comments] Error:', err);
+    console.error('[API /api/comments] POST error:', err.message);
     return NextResponse.json({ error: 'Failed to post comment' }, { status: 500, headers: CORS_HEADERS });
   }
 }

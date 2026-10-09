@@ -94,6 +94,20 @@ model PlaylistItem {
   @@index([playlistId])
 }
 
+model Comment {
+  id        String   @id @default(cuid())
+  vkey      String
+  uid       String?
+  userId    String?
+  author    String   @default("Anonymous")
+  message   String
+  upvotes   Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([vkey, createdAt])
+  @@index([uid, createdAt])
+}
+
 model Report {
   id        String   @id @default(cuid())
   vkey      String
