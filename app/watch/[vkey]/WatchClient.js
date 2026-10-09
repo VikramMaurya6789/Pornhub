@@ -906,7 +906,7 @@ function WatchContent() {
     if (rawUrl.startsWith('/channels/') || rawUrl.startsWith('/users/') || rawUrl.startsWith('/model/')) {
       return `/uploader${rawUrl}`;
     }
-    const cleanName = (v.author || 'creator').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const cleanName = String(v.author || 'creator').toLowerCase().replace(/[^a-z0-9]+/g, '-');
     return `/uploader/model/${cleanName}`;
   }, [v]);
 
@@ -1675,7 +1675,7 @@ function WatchContent() {
                     {v.pornstars.slice(1, 9).map((star, i) => (
                       <Link
                         key={i}
-                        href={`/pornstar/${star.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
+                        href={`/pornstar/${String(star || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
                         className="flex flex-col items-center gap-2 shrink-0 group"
                       >
                         <div className="w-16 h-16 rounded-full overflow-hidden bg-[#1f1f1f] ring-2 ring-transparent group-hover:ring-[#ff9900] transition-all">
@@ -1880,7 +1880,7 @@ function WatchContent() {
                     ? (v.authorUrl.startsWith('/pornstar/')
                         ? v.authorUrl
                         : `/uploader${v.authorUrl.startsWith('/') ? '' : '/'}${v.authorUrl}`)
-                    : `/pornstar/${v.author.toLowerCase().replace(/[^a-z0-9_-]/g, '-')}`
+                    : `/pornstar/${String(v.author || 'creator').toLowerCase().replace(/[^a-z0-9_-]/g, '-')}`
                 }
                 className="px-4 py-2 rounded-xl bg-[#ff9900] hover:bg-[#ffb340] text-black text-xs font-black transition-all shadow-[0_4px_15px_rgba(255,153,0,0.3)] hover:shadow-[0_4px_20px_rgba(255,153,0,0.5)] shrink-0"
               >
