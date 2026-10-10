@@ -38,10 +38,19 @@ export default function Player({
   const streamUrl = streams?.[0]?.url || null;
   const qualities = (streams || []).map(s => s.quality).filter(Boolean);
 
+  // Pick 720p (or closest) as default for fast start - 1080p buffers too slowly via proxy
+  const defaultStreamUrl = (() => {
+    if (!streams?.length) return null;
+    const q720 = streams.find(s => String(s.quality) === '720');
+    const q480 = streams.find(s => String(s.quality) === '480');
+    return (q720 || q480 || streams[0])?.url || null;
+  })();
+
   // Setup hls.js - SIMPLE, like the working diagnostic
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !streamUrl) return;
+    const url = defaultStreamUrl || streamUrl;
+    if (!video || !url) return;
 
     // Cleanup previous
     if (hlsRef.current) {
@@ -49,12 +58,12 @@ export default function Player({
       hlsRef.current = null;
     }
 
-    const isHls = streamUrl.includes('.m3u8') || streamUrl.includes('/api/hls');
+    const isHls = url.includes('.m3u8') || url.includes('/api/hls');
 
     if (isHls && Hls.isSupported()) {
       const hls = new Hls({ enableWorker: false });
       hlsRef.current = hls;
-      hls.loadSource(streamUrl);
+      hls.loadSource(url);
       hls.attachMedia(video);
       hls.on(Hls.Events.ERROR, (event, data) => {
         if (data.fatal) {
@@ -62,9 +71,9 @@ export default function Player({
         }
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = streamUrl;
+      video.src = url;
     } else {
-      video.src = streamUrl;
+      video.src = url;
     }
 
     // Restore position
