@@ -1617,12 +1617,16 @@ function WatchContent() {
                       <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider mr-1 flex items-center gap-1">
                         <IconTag size={12} /> Tags:
                       </span>
-                      {(v.tags || []).map(t => (
-                        <Link key={t} href={`/search?q=${encodeURIComponent(t)}`}
+                      {(v.tags || []).map((t, idx) => {
+                        const tagName = typeof t === 'string' ? t : (t?.name || String(t || ''));
+                        const tagKey = typeof t === 'string' ? t : (t?.slug || t?.name || idx);
+                        return (
+                        <Link key={tagKey} href={`/search?q=${encodeURIComponent(tagName)}`}
                           className="px-2.5 py-0.5 rounded bg-[#1c1c1c] text-[11px] text-neutral-400 hover:text-white hover:bg-[#282828] transition-colors">
-                          #{t}
+                          #{tagName}
                         </Link>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
