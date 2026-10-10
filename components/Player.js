@@ -141,6 +141,7 @@ export default function Player({
   const videoRef = useRef(null);
   const scrubberRef = useRef(null);
   const hlsRef = useRef(null);
+  const watchdogRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
   const feedbackTimeoutRef = useRef(null);
   const lastTimeRef = useRef(0);
@@ -917,6 +918,37 @@ export default function Player({
 
       hls.on(Hls.Events.MANIFEST_PARSED, restorePlaybackState);
 
+      // STARTUP WATCHDOG: If video doesn't progress within 12s of hls init,
+      // force recovery. Catches silent stalls where hls.js loads but never
+      // delivers data to the video element (no error, stuck at 0:00).
+      const watchdogStart = Date.now();
+      const watchdog = setInterval(() => {
+        const v = videoRef.current;
+        const h = hlsRef.current;
+        if (!v || !h) { clearInterval(watchdog); return; }
+        const elapsed = Date.now() - watchdogStart;
+        // If playing (not paused) but time hasn't advanced and no data buffered after 12s
+        const hasProgress = v.currentTime > 0.5 || (v.buffered && v.buffered.length > 0 && v.buffered.end(0) > 0.5);
+        if (elapsed > 12000 && !v.paused && !hasProgress && !hasStartedPlaybackRef.current) {
+          console.warn('[Player] Startup watchdog: no progress after 12s, forcing recovery at lowest quality');
+          clearInterval(watchdog);
+          try {
+            // Force lowest quality level for fastest start
+            if (h.levels && h.levels.length > 0) {
+              h.currentLevel = h.levels.length - 1;
+            }
+            h.startLoad();
+            // Nudge the video element
+            v.play().catch(() => {});
+          } catch (e) {
+            console.warn('[Player] Watchdog recovery failed:', e.message);
+          }
+        } else if (hasProgress || elapsed > 30000) {
+          clearInterval(watchdog);
+        }
+      }, 2000);
+      watchdogRef.current = watchdog;
+
       // Preserve position across media attachments (e.g. after recoverMediaError)
       hls.on(Hls.Events.MEDIA_ATTACHED, () => {
         const targetTime = savedPositionRef.current;
@@ -1049,6 +1081,10 @@ export default function Player({
     }
 
     return () => {
+      if (watchdogRef.current) {
+        clearInterval(watchdogRef.current);
+        watchdogRef.current = null;
+      }
       if (video) video.onerror = null;
       if (hlsRef.current) {
         hlsRef.current.destroy();
