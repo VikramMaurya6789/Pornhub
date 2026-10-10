@@ -894,42 +894,7 @@ export default function Player({
     if (isHls && Hls.isSupported()) {
       const hls = new Hls({
         enableWorker: false,
-        lowLatencyMode: false,
-        backBufferLength: 90,
-        maxBufferLength: 60,
-        maxMaxBufferLength: 120,
-        startLevel: -1,
-        startPosition: currentPos > 0 ? currentPos : -1,
-        autoStartLoad: true,
-        // Don't cap quality to player size — phones have small players but
-        // users want 720p+ if their network can handle it.
-        capLevelToPlayerSize: false,
-
-        // ABR tuning: less aggressive down-switching, faster up-switching.
-        // The proxy adds latency which deflates bandwidth estimates, so be
-        // conservative about dropping and eager about recovering.
-        abrBandWidthFactor: 0.9,
-        abrBandWidthUpFactor: 0.6,
-
-        // Start with a high bandwidth estimate (12 Mbps) instead of the
-        // hls.js default 500 kbps. This starts playback directly at 1080p on
-        // fast networks instead of slowly probing up from 240p — instant best
-        // quality. ABR still steps down quickly if the network can't keep up.
-        abrEwmaDefaultEstimate: 12000000,
-
-        // Faster recovery when a segment/playlist request fails: retry after
-        // 500ms instead of the 1000ms default, so a single bad segment
-        // doesn't turn into a visible spinner.
-        fragLoadingRetryDelay: 500,
-        manifestLoadingRetryDelay: 500,
-        levelLoadingRetryDelay: 500,
-
-        // Seek & buffer hole configuration
-        maxSeekHole: 2, // Max buffer hole size to seek over (seconds)
-        seekHoleNudgeDuration: 0.05, // Step size when nudging over a seek hole
-        nudgeMaxRetry: 5, // Maximum retries for nudging out of a stall or seek hole
-        nudgeOffset: 0.1, // Offset applied when nudging
-        maxFragLookUpTolerance: 0.25, // Tolerance when matching fragments to seek time
+        // Minimal config proven working by diagnostic - no aggressive ABR tuning
       });
 
       hlsRef.current = hls;
