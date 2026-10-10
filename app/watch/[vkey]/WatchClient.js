@@ -1871,7 +1871,7 @@ function WatchContent() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-[10px] text-[#ff9900] font-bold uppercase tracking-widest">Creator</p>
-                  <p className="text-sm font-bold text-white truncate">{v.author}</p>
+                  <p className="text-sm font-bold text-white truncate">{typeof v.author === 'string' ? v.author : v.author?.name || 'Unknown'}</p>
                 </div>
               </div>
               <Link
