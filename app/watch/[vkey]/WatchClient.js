@@ -23,6 +23,21 @@ import {
 import { haptic } from '../../../lib/haptics';
 import { formatCount, formatViews, formatMaxViews } from '../../../lib/format';
 
+// Safe string renderer: prevents React error #31 (objects as children)
+// Converts any value to a safe string for rendering
+function safeStr(v, fallback = '') {
+  if (v == null) return fallback;
+  if (typeof v === 'string') return v;
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+  if (typeof v === 'object') {
+    // If it's an object with name/title, use that
+    if (v.name && typeof v.name === 'string') return v.name;
+    if (v.title && typeof v.title === 'string') return v.title;
+    return fallback;
+  }
+  return String(v);
+}
+
 function WatchContent() {
   const params = useParams();
   const router = useRouter();
@@ -944,10 +959,10 @@ function WatchContent() {
             <Player
               key={vkey}
               vkey={vkey}
-              title={v.title}
+              title={safeStr(v.title)}
               streams={v.streams}
-              poster={v.thumbnail}
-              duration={v.duration}
+              poster={safeStr(v.thumbnail)}
+              duration={safeStr(v.duration)}
               theaterMode={theaterMode}
               onToggleTheater={toggleTheater}
               onEnded={handleEnded}
@@ -1011,7 +1026,7 @@ function WatchContent() {
         <div className={`min-w-0 ${theaterMode ? 'lg:col-start-1 lg:row-start-2 lg:col-span-1' : 'lg:col-start-1 lg:row-start-2 lg:col-span-1'}`}>
           {v && (
             <div className="fade-in">
-              <h1 className="text-lg md:text-[1.65rem] font-extrabold text-white mt-1 leading-[1.25] tracking-tight">{v.title}</h1>
+              <h1 className="text-lg md:text-[1.65rem] font-extrabold text-white mt-1 leading-[1.25] tracking-tight">{safeStr(v.title)}</h1>
 
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 text-sm text-neutral-400">
                 {(liveViews !== null || v.views) && (
@@ -1962,10 +1977,10 @@ function WatchContent() {
                   </div>
                   <div className="min-w-0 py-0.5">
                     <p className="clamp-2 text-[13px] font-medium text-neutral-100 group-hover:text-[#ff9900] transition-colors leading-snug">
-                      {r.title}
+                      {safeStr(r.title)}
                     </p>
                     <p className="text-[11px] text-neutral-400 mt-1.5 flex items-center gap-1">
-                      {r.author && <span className="text-neutral-300 truncate max-w-[120px]">{r.author}</span>}
+                      {r.author && <span className="text-neutral-300 truncate max-w-[120px]">{safeStr(r.author)}</span>}
                     </p>
                     <p className="text-[11px] text-neutral-500 mt-0.5">
                       {r.views ? formatViews(r.views) : ''}
