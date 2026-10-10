@@ -14,5 +14,5 @@ export default async function WatchPage(props) {
     notFound();
   }
 
-  return <WatchClient />;
+  return <WatchClient key={vkey} />;
 }

@@ -66,6 +66,26 @@ export default function Player({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(() => canonicalDurationSec || 0);
 
+  // PLAYBACK SYNC MONITOR: Ensures the video element's actual paused state
+  // matches the UI. If UI says playing but video.paused is true (desync),
+  // force video.play(). Runs every 2s.
+  useEffect(() => {
+    const sync = setInterval(() => {
+      const v = videoRef.current;
+      if (!v) return;
+      // UI says playing but video is actually paused -> force play
+      if (isPlayingRef.current && v.paused && !v.ended && v.readyState >= 2) {
+        console.warn('[Player] Desync detected: UI=playing but video.paused=true, forcing play()');
+        v.play().catch(() => {});
+      }
+      // UI says paused but video is actually playing -> sync UI
+      if (!isPlayingRef.current && !v.paused && !v.ended) {
+        setIsPlaying(true);
+      }
+    }, 2000);
+    return () => clearInterval(sync);
+  }, []);
+
   useEffect(() => {
     canonicalDurationRef.current = canonicalDurationSec;
     durationMismatchWarnedRef.current = false;
