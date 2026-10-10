@@ -1691,25 +1691,30 @@ function WatchContent() {
                 <div className="mt-8 pt-8 border-t border-[#1f1f1f]">
                   <h2 className="text-lg font-bold text-white mb-4">Co-Performers</h2>
                   <div className="flex gap-4 overflow-x-auto pb-2">
-                    {v.pornstars.slice(1, 9).map((star, i) => (
+                    {v.pornstars.slice(1, 9).map((star, i) => {
+                      const starName = typeof star === 'object' ? String(star?.name || '') : String(star || '');
+                      const starSlug = typeof star === 'object' ? String(star?.slug || '') : starName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                      if (!starName) return null;
+                      return (
                       <Link
                         key={i}
-                        href={`/pornstar/${String(star || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
+                        href={`/pornstar/${starSlug}`}
                         className="flex flex-col items-center gap-2 shrink-0 group"
                       >
                         <div className="w-16 h-16 rounded-full overflow-hidden bg-[#1f1f1f] ring-2 ring-transparent group-hover:ring-[#ff9900] transition-all">
                           <img
-                            src={`/api/avatar?name=${encodeURIComponent(star)}`}
-                            alt={star}
+                            src={`/api/avatar?name=${encodeURIComponent(starName)}`}
+                            alt={starName}
                             className="w-full h-full object-cover"
                             loading="lazy"
                           />
                         </div>
                         <span className="text-xs text-neutral-300 group-hover:text-[#ff9900] text-center max-w-[80px] truncate">
-                          {star}
+                          {starName}
                         </span>
                       </Link>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
