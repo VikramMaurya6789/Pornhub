@@ -893,7 +893,7 @@ export default function Player({
 
     if (isHls && Hls.isSupported()) {
       const hls = new Hls({
-        enableWorker: true,
+        enableWorker: false,
         lowLatencyMode: false,
         backBufferLength: 90,
         maxBufferLength: 60,
