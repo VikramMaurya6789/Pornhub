@@ -5,10 +5,13 @@
 #   bash /opt/orangehub/deploy/vps/setup.sh
 # Re-runnable: skips steps that are already done.
 set -e
+# This VPS is a container with ~1GB RAM: cap the Node heap so npm/build
+# don't get OOM-killed. (Also inherited by the pm2 app at runtime.)
+export NODE_OPTIONS="--max-old-space-size=700"
 cd "$(dirname "$0")/../.."
 REPO_ROOT="$PWD"
 
-rand() { tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "$1"; }
+rand() { tr -dc 'A-Za-z0-9' < /dev/urandom 2>/dev/null | head -c "$1"; }
 
 echo "=== [1/6] System packages ==="
 apt-get update -qq
