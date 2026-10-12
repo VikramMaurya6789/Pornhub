@@ -80,7 +80,17 @@ echo "OK"
 
 echo "=== [5/6] Install deps + migrate + build (slow on 1GB RAM, do not interrupt) ==="
 service postgresql stop 2>/dev/null || true   # free RAM for install/build
-npm i -g pnpm --no-audit --no-fund > /dev/null 2>&1 || true
+# pnpm: npm can't handle this 1.4GB tree in 1GB RAM, so we switch package managers.
+if ! command -v pnpm > /dev/null 2>&1; then
+  echo "Installing pnpm..."
+  export PNPM_HOME="$HOME/.local/share/pnpm"
+  mkdir -p "$PNPM_HOME"
+  curl -fsSL https://get.pnpm.io/install.sh | sh - > /dev/null 2>&1 \
+    || npm i -g pnpm --no-audit --no-fund > /dev/null 2>&1 || true
+  export PATH="$PNPM_HOME:$(npm config get prefix 2>/dev/null)/bin:$PATH"
+fi
+command -v pnpm > /dev/null 2>&1 || { echo "ERROR: pnpm could not be installed, aborting"; exit 1; }
+echo "pnpm $(pnpm --version) ready"
 rm -rf node_modules   # drop any half-done npm install
 pnpm install --frozen-lockfile
 service postgresql start 2>/dev/null || pg_ctlcluster "$(ls /etc/postgresql/ | head -1)" main start 2>/dev/null || true
