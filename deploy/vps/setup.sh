@@ -32,8 +32,11 @@ if [ ! -f .env ]; then
 else
   DBPW="$(grep '^POSTGRES_URL=' .env | sed 's/.*:\/\/[^:]*://; s/@.*//')"
 fi
-su postgres -c "psql -tc \"SELECT 1 FROM pg_roles WHERE rolname='orangehub'\"" | grep -q 1 \
-  || su postgres -c "psql -c \"CREATE USER orangehub WITH PASSWORD '$DBPW'\""
+if su postgres -c "psql -tc \"SELECT 1 FROM pg_roles WHERE rolname='orangehub'\"" | grep -q 1; then
+  su postgres -c "psql -c \"ALTER USER orangehub WITH PASSWORD '$DBPW'\""
+else
+  su postgres -c "psql -c \"CREATE USER orangehub WITH PASSWORD '$DBPW'\""
+fi
 su postgres -c "psql -tc \"SELECT 1 FROM pg_database WHERE datname='orangehub'\"" | grep -q 1 \
   || su postgres -c "psql -c \"CREATE DATABASE orangehub OWNER orangehub\""
 rm -f /tmp/oh_dbpw
