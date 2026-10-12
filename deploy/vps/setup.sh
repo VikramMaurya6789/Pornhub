@@ -7,7 +7,7 @@
 set -e
 # This VPS is a container with ~1GB RAM: cap the Node heap so npm/build
 # don't get OOM-killed. (Also inherited by the pm2 app at runtime.)
-export NODE_OPTIONS="--max-old-space-size=700"
+export NODE_OPTIONS="--max-old-space-size=512"
 cd "$(dirname "$0")/../.."
 REPO_ROOT="$PWD"
 
@@ -16,6 +16,11 @@ rand() { tr -dc 'A-Za-z0-9' < /dev/urandom 2>/dev/null | head -c "$1"; }
 echo "=== [1/6] System packages ==="
 apt-get update -qq
 apt-get install -y -qq curl git postgresql postgresql-contrib cron > /dev/null
+# Try to enable 2GB swap (big help on 1GB containers; silently skipped if not permitted)
+if ! swapon --show 2>/dev/null | grep -q '^/'; then
+  [ -e /swapfile ] || { fallocate -l 2G /swapfile 2>/dev/null && chmod 600 /swapfile && mkswap /swapfile >/dev/null 2>&1; }
+  swapon /swapfile 2>/dev/null && echo "2GB swap enabled" || true
+fi
 echo "OK"
 
 echo "=== [2/6] Node.js 22 ==="
@@ -71,8 +76,10 @@ else
 fi
 echo "OK"
 
-echo "=== [5/6] Install deps + migrate + build (takes a few minutes) ==="
+echo "=== [5/6] Install deps + migrate + build (slow on 1GB RAM, do not interrupt) ==="
+service postgresql stop 2>/dev/null || true   # free RAM for npm/next build
 npm ci --no-audit --no-fund
+service postgresql start 2>/dev/null || pg_ctlcluster "$(ls /etc/postgresql/ | head -1)" main start 2>/dev/null || true
 npx prisma migrate deploy
 npm run build
 echo "OK"
