@@ -16,6 +16,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@prisma/client": "6.19.3",
     "@videojs/hlsjs-video": "^10.0.0-rc.4",
     "@videojs/react": "^10.0.0-rc.4",
     "bcryptjs": "^3.0.3",
@@ -24,10 +25,10 @@
     "hls.js": "^1.7.3",
     "jsonwebtoken": "^9.0.3",
     "next": "^16.3.6",
+    "prisma": "6.19.3",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "prisma": "6.19.3",
-    "@prisma/client": "6.19.3"
+    "undici": "7.30.0"
   },
   "devDependencies": {
     "@opennextjs/cloudflare": "^1.20.9",

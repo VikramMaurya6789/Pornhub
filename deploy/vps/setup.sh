@@ -8,6 +8,8 @@ set -e
 # This VPS is a container with ~1GB RAM: cap the Node heap so npm/build
 # don't get OOM-killed. (Also inherited by the pm2 app at runtime.)
 export NODE_OPTIONS="--max-old-space-size=512"
+# Turbopack is Rust (ignores NODE_OPTIONS): cap its threads or it OOMs on 1GB.
+export RAYON_NUM_THREADS=1
 cd "$(dirname "$0")/../.."
 REPO_ROOT="$PWD"
 
@@ -77,11 +79,13 @@ fi
 echo "OK"
 
 echo "=== [5/6] Install deps + migrate + build (slow on 1GB RAM, do not interrupt) ==="
-service postgresql stop 2>/dev/null || true   # free RAM for npm/next build
-npm ci --no-audit --no-fund
+service postgresql stop 2>/dev/null || true   # free RAM for install/build
+npm i -g pnpm --no-audit --no-fund > /dev/null 2>&1 || true
+rm -rf node_modules   # drop any half-done npm install
+pnpm install --frozen-lockfile
 service postgresql start 2>/dev/null || pg_ctlcluster "$(ls /etc/postgresql/ | head -1)" main start 2>/dev/null || true
 npx prisma migrate deploy
-npm run build
+pnpm build
 echo "OK"
 
 echo "=== [6/6] Start with pm2 ==="
